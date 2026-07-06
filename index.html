@@ -529,10 +529,44 @@
     transition: background 0.15s;
   }
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+  /* ===== パスワード設定画面 ===== */
+  .password-screen {
+    display: none;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #eef9fc 0%, #f8fbfc 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .password-screen.active { display: flex; }
 </style>
 </head>
 <body>
 <div class="app">
+
+
+<!-- ===== パスワード設定画面（招待・リセット後） ===== -->
+<div class="password-screen" id="password-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-title">ナスカン案件管理</div>
+      <div class="login-logo-sub" id="password-screen-sub">パスワードを設定してください</div>
+    </div>
+    <div id="password-alert"></div>
+    <div class="login-form-group">
+      <label class="login-label">新しいパスワード</label>
+      <input type="password" class="login-input" id="new-password" placeholder="8文字以上で入力"
+        onkeydown="if(event.key==='Enter')doSetPassword()">
+    </div>
+    <div class="login-form-group">
+      <label class="login-label">パスワード（確認）</label>
+      <input type="password" class="login-input" id="new-password-confirm" placeholder="もう一度入力"
+        onkeydown="if(event.key==='Enter')doSetPassword()">
+    </div>
+    <button class="login-btn" id="password-btn" onclick="doSetPassword()">パスワードを設定する</button>
+  </div>
+</div>
 
 <!-- ===== ログイン画面 ===== -->
 <div class="login-screen active" id="login-screen">
@@ -2153,6 +2187,87 @@ async function doReset() {
     btn.textContent = 'リセットリンクを送信';
   }
 }
+
+
+// ===== パスワード設定画面の処理 =====
+function showPasswordScreen(type) {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('reset-screen').classList.remove('active');
+  document.getElementById('password-screen').classList.add('active');
+  document.querySelector('.app > header').style.display = 'none';
+  const main = document.querySelector('.main');
+  if (main) main.style.display = 'none';
+
+  const sub = document.getElementById('password-screen-sub');
+  if (type === 'invite') {
+    sub.textContent = 'はじめにパスワードを設定してください';
+  } else {
+    sub.textContent = '新しいパスワードを設定してください';
+  }
+}
+
+async function doSetPassword() {
+  const password = document.getElementById('new-password').value;
+  const confirm = document.getElementById('new-password-confirm').value;
+  const btn = document.getElementById('password-btn');
+  const alertEl = document.getElementById('password-alert');
+
+  if (!password || !confirm) {
+    alertEl.innerHTML = '<div class="alert alert-error">パスワードを入力してください</div>';
+    return;
+  }
+  if (password.length < 8) {
+    alertEl.innerHTML = '<div class="alert alert-error">パスワードは8文字以上で入力してください</div>';
+    return;
+  }
+  if (password !== confirm) {
+    alertEl.innerHTML = '<div class="alert alert-error">パスワードが一致しません</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '設定中...';
+  alertEl.innerHTML = '';
+
+  const { error } = await db.auth.updateUser({ password });
+
+  if (error) {
+    alertEl.innerHTML = '<div class="alert alert-error">設定に失敗しました。もう一度お試しください</div>';
+    btn.disabled = false;
+    btn.textContent = 'パスワードを設定する';
+  } else {
+    alertEl.innerHTML = '<div class="alert alert-success">パスワードを設定しました。ログインしてください</div>';
+    btn.disabled = false;
+    btn.textContent = 'パスワードを設定する';
+    setTimeout(() => {
+      document.getElementById('password-screen').classList.remove('active');
+      showLoginForm();
+    }, 2000);
+  }
+}
+
+// URLのハッシュからtypeを検出（招待・リセット）
+(function checkUrlHash() {
+  const hash = window.location.hash;
+  if (hash.includes('type=invite') || hash.includes('type=recovery')) {
+    const type = hash.includes('type=invite') ? 'invite' : 'recovery';
+    // Supabaseがハッシュからセッションを自動設定するのを待つ
+    db.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') return;
+      if ((event === 'SIGNED_IN') && hash.includes('type=invite')) {
+        showPasswordScreen('invite');
+      }
+    });
+    // ハッシュのトークンをSupabaseに渡す
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if (accessToken) {
+      db.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' })
+        .then(() => showPasswordScreen(type));
+    }
+  }
+})();
 
 // 初期状態でヘッダーとメインを非表示
 document.querySelector('.app > header').style.display = 'none';

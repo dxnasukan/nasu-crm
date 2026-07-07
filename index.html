@@ -2281,7 +2281,21 @@ const _mainEl = document.querySelector('.main');
 if (_mainEl) _mainEl.style.display = 'none';
 
 // ===== 初期ロード =====
-// 認証後にloadCompaniesを呼ぶ
+// F5リロード時のセッション復元
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    const { data } = await db.from('users').select('*').eq('id', currentUser.id).single();
+    currentUserProfile = data;
+    const nameEl = document.getElementById('header-username');
+    if (nameEl && data) nameEl.textContent = data.name;
+    showApp();
+    loadCompanies();
+  } else {
+    showLoginForm();
+  }
+})();
 </script>
 </body>
 </html>

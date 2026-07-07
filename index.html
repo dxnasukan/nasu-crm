@@ -1126,27 +1126,7 @@
 const SUPABASE_URL = 'https://kvlzcqohbtvryyvkezeh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2bHpjcW9oYnR2cnl5dmtlemVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMzYzNzYsImV4cCI6MjA5MjkxMjM3Nn0.gmC9Gej_U6lB3ONaiKF2oX_epHeeRpjdDoOLZqZbYpg';
 const { createClient } = supabase;
-
-// Edgeのトラッキング防止対策：localStorage→sessionStorageへフォールバック
-const customStorage = {
-  getItem: (key) => {
-    try { return localStorage.getItem(key); } catch(e) {}
-    try { return sessionStorage.getItem(key); } catch(e) {}
-    return null;
-  },
-  setItem: (key, value) => {
-    try { localStorage.setItem(key, value); return; } catch(e) {}
-    try { sessionStorage.setItem(key, value); } catch(e) {}
-  },
-  removeItem: (key) => {
-    try { localStorage.removeItem(key); } catch(e) {}
-    try { sessionStorage.removeItem(key); } catch(e) {}
-  }
-};
-
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { storage: customStorage, persistSession: true }
-});
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== 定数 =====
 const STATUS_LABELS = {

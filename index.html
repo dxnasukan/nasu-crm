@@ -791,36 +791,89 @@
         </div>
 
         <!-- フィルターパネル -->
-        <div id="meeting-filter-panel" style="display:none;padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
-          <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">ステータス</div>
-              <div id="meeting-status-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+        <div id="meeting-filter-panel" style="display:none;padding:14px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+          <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+
+            <!-- ステータス -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">ステータス</span>
+              <select id="meeting-status-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
+                <option value="">すべて</option>
+                <option value="1">情報収集中</option>
+                <option value="2">アプローチ中</option>
+                <option value="3">ヒアリング</option>
+                <option value="4">設計・積算中</option>
+                <option value="5">見積提出</option>
+                <option value="6">交渉</option>
+                <option value="7">内示・受注確定</option>
+              </select>
             </div>
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">重要度</div>
-              <div id="meeting-confidence-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+
+            <!-- 重要度 -->
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">重要度</span>
+              <div style="display:flex;gap:4px">
+                <button class="filter-toggle-btn" id="imp-btn-A" onclick="toggleFilterBtn('imp','A')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">A</button>
+                <button class="filter-toggle-btn" id="imp-btn-B" onclick="toggleFilterBtn('imp','B')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">B</button>
+                <button class="filter-toggle-btn" id="imp-btn-C" onclick="toggleFilterBtn('imp','C')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">C</button>
+              </div>
             </div>
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">案件種別</div>
-              <div id="meeting-category-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+
+            <!-- 新規/保持 -->
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">新規/保持</span>
+              <div style="display:flex;gap:4px">
+                <button class="filter-toggle-btn" id="type-btn-新規" onclick="toggleFilterBtn('type','新規')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">新規</button>
+                <button class="filter-toggle-btn" id="type-btn-保持" onclick="toggleFilterBtn('type','保持')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">保持</button>
+              </div>
             </div>
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">リピート/スポット</div>
-              <div id="meeting-contract-cbs" style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px"></div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">新規/保持</div>
-              <div id="meeting-type-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+
+            <!-- リピート/スポット -->
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">区分</span>
+              <div style="display:flex;gap:4px">
+                <button class="filter-toggle-btn" id="contract-btn-リピート" onclick="toggleFilterBtn('contract','リピート')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">リピート</button>
+                <button class="filter-toggle-btn" id="contract-btn-スポット" onclick="toggleFilterBtn('contract','スポット')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">スポット</button>
+              </div>
             </div>
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">担当者検索</div>
-              <input type="text" id="meeting-assigned-search" placeholder="名前で絞り込み..." 
-                style="padding:6px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;width:160px"
+
+            <!-- 種別 -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">種別</span>
+              <select id="meeting-category-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
+                <option value="">すべて</option>
+                <option value="分析">分析</option>
+                <option value="水質">水質</option>
+                <option value="大気">大気</option>
+                <option value="調査">調査</option>
+                <option value="薬品">薬品</option>
+                <option value="工事">工事</option>
+                <option value="給排水設備工事">給排水設備工事</option>
+                <option value="熱源空調設備工事">熱源空調設備工事</option>
+                <option value="その他工事">その他工事</option>
+                <option value="ビル管理">ビル管理</option>
+              </select>
+            </div>
+
+            <!-- 担当者検索 -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当者</span>
+              <input type="text" id="meeting-assigned-search" placeholder="名前で絞り込み..."
+                style="padding:5px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;width:140px"
                 oninput="filterMeeting()">
             </div>
+
+            <!-- リセット -->
+            <button class="btn btn-secondary btn-sm" onclick="resetMeetingFilters()">リセット</button>
           </div>
-          <div style="margin-top:12px;display:flex;gap:8px">
-            <button class="btn btn-secondary btn-sm" onclick="checkAllMeeting(true)">全選択</button>
-            <button class="btn btn-secondary btn-sm" onclick="checkAllMeeting(false)">全解除</button>
+
+          <!-- 非表示（後方互換のため残す） -->
+          <div style="display:none">
+            <div id="meeting-status-cbs"></div>
+            <div id="meeting-confidence-cbs"></div>
+            <div id="meeting-category-cbs"></div>
+            <div id="meeting-contract-cbs"></div>
+            <div id="meeting-type-cbs"></div>
           </div>
         </div>
 
@@ -2382,6 +2435,47 @@ function formatTiming(p) {
   return p.timing_label || '—';
 }
 
+
+
+// ===== サマリーフィルターボタン =====
+const filterState = { imp: new Set(), type: new Set(), contract: new Set() };
+
+function toggleFilterBtn(group, value) {
+  const btn = document.getElementById(`${group}-btn-${value}`);
+  if (filterState[group].has(value)) {
+    filterState[group].delete(value);
+    btn.style.background = 'var(--surface)';
+    btn.style.color = 'var(--text)';
+    btn.style.borderColor = 'var(--border-strong)';
+  } else {
+    filterState[group].add(value);
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'white';
+    btn.style.borderColor = 'var(--accent)';
+  }
+  filterMeeting();
+}
+
+function resetMeetingFilters() {
+  // ステータス・種別セレクト
+  document.getElementById('meeting-status-select').value = '';
+  document.getElementById('meeting-category-select').value = '';
+  // 担当者検索
+  document.getElementById('meeting-assigned-search').value = '';
+  // ボタンフィルター
+  ['imp','type','contract'].forEach(group => {
+    filterState[group].forEach(val => {
+      const btn = document.getElementById(`${group}-btn-${val}`);
+      if (btn) {
+        btn.style.background = 'var(--surface)';
+        btn.style.color = 'var(--text)';
+        btn.style.borderColor = 'var(--border-strong)';
+      }
+    });
+    filterState[group].clear();
+  });
+  filterMeeting();
+}
 
 // ===== 自分の担当フィルター =====
 let showMyCompanies = false;

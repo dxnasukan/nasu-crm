@@ -357,7 +357,11 @@
   /* Loading */
   .loading { padding: 32px; text-align: center; color: var(--text-faint); }
 
-
+  .importance-A { background: #fee2e2; color: #991b1b; font-weight: 600; }
+  .importance-B { background: #fef3c7; color: #92400e; }
+  .importance-C { background: #e0f2fe; color: #0369a1; }
+  .prospect-type-保持内開拓 { background: var(--accent-light); color: var(--accent); }
+  .prospect-type-新規 { background: #fef3c7; color: #92400e; }
   .company-item {
     padding: 12px 16px;
     border-bottom: 1px solid var(--border);
@@ -391,10 +395,12 @@
   @media print {
     .header, #meeting-toolbar, #meeting-summary-bar { display: none !important; }
     .card { box-shadow: none; border: none; }
-    body { background: white; font-size: 12px; }
+    body { background: white; font-size: 10px; }
     .badge { border: 1px solid #ccc; }
-    th, td { padding: 6px 8px; }
+    th, td { padding: 4px 6px; }
     .print-header { display: block !important; }
+    @page { size: A4 landscape; margin: 10mm; }
+    #meeting-table { font-size: 10px; }
   }
   .print-header {
     display: none;
@@ -472,6 +478,15 @@
     padding: 24px;
   }
   .login-screen.active { display: flex; }
+  .password-screen {
+    display: none;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #eef9fc 0%, #f8fbfc 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .password-screen.active { display: flex; }
   .login-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -494,6 +509,7 @@
     color: var(--text);
     background: var(--surface);
     margin-bottom: 16px;
+    box-sizing: border-box;
     transition: border-color 0.15s;
   }
   .login-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(75,184,212,0.15); }
@@ -529,22 +545,10 @@
     transition: background 0.15s;
   }
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
-
-  /* ===== パスワード設定画面 ===== */
-  .password-screen {
-    display: none;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #eef9fc 0%, #f8fbfc 100%);
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .password-screen.active { display: flex; }
 </style>
 </head>
 <body>
 <div class="app">
-
 
 <!-- ===== パスワード設定画面（招待・リセット後） ===== -->
 <div class="password-screen" id="password-screen">
@@ -677,11 +681,10 @@
               <span class="search-icon">🔍</span>
               <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名で検索..." oninput="filterProspects()">
             </div>
-
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
               <option value="1">情報収集中</option>
-              <option value="2">アプローチ中</option>
+              <option value="2">コンタクト中</option>
               <option value="3">ヒアリング</option>
               <option value="4">設計・積算中</option>
               <option value="5">見積提出</option>
@@ -775,7 +778,10 @@
               <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">ステータス</div>
               <div id="meeting-status-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
             </div>
-
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">重要度</div>
+              <div id="meeting-confidence-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+            </div>
             <div>
               <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">案件種別</div>
               <div id="meeting-category-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
@@ -798,19 +804,21 @@
           <span id="meeting-total-amount"></span>
         </div>
         <div class="table-wrap">
-          <table id="meeting-table">
+          <table id="meeting-table" style="width:100%;font-size:12px;min-width:1200px">
             <thead>
               <tr>
-                <th>担当者</th>
+                <th style="width:50px;text-align:center">重要度</th>
                 <th>得意先</th>
+                <th style="width:60px;text-align:center">規模</th>
                 <th>案件名</th>
-                <th>ステータス</th>
-                <th>直近変更</th>
+                <th style="width:70px">区分</th>
                 <th>種別</th>
-                <th>区分</th>
-                <th>見込み金額</th>
-                <th>見込み日</th>
-                <th>備考</th>
+                <th>担当課</th>
+                <th>担当者</th>
+                <th style="width:100px">ステータス</th>
+                <th style="width:140px">直近変更</th>
+                <th style="width:80px">時期</th>
+                <th style="width:100px;text-align:right">見込み額</th>
               </tr>
             </thead>
             <tbody id="meeting-tbody">
@@ -939,7 +947,7 @@
             <label class="form-label">ステータス</label>
             <select class="form-control" id="prospect-status">
               <option value="1">1. 情報収集中</option>
-              <option value="2">2. アプローチ中</option>
+              <option value="2">2. コンタクト中</option>
               <option value="3">3. ヒアリング</option>
               <option value="4">4. 設計・積算中</option>
               <option value="5">5. 見積提出</option>
@@ -950,37 +958,45 @@
             </select>
           </div>
         </div>
+        <div class="span-2">
+          <div class="form-group">
+            <label class="form-label">案件種別（複数選択可）</label>
+            <div id="prospect-category-cbs" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface)">
+            </div>
+          </div>
+        </div>
         <div>
           <div class="form-group">
-            <label class="form-label">案件種別</label>
-            <select class="form-control" id="prospect-category">
-              <option value="">選択してください</option>
-              <option value="分析">分析</option>
-              <option value="水質">水質</option>
-              <option value="大気">大気</option>
-              <option value="調査">調査</option>
-              <option value="薬品">薬品</option>
-              <option value="工事">工事</option>
-              <option value="給排水設備工事">給排水設備工事</option>
-              <option value="熱源空調設備工事">熱源空調設備工事</option>
-              <option value="その他工事">その他工事</option>
-              <option value="ビル管理">ビル管理</option>
+            <label class="form-label">保持/新規</label>
+            <select class="form-control" id="prospect-type">
+              <option value="">未設定</option>
+              <option value="保持内開拓">保持内開拓</option>
+              <option value="新規">新規</option>
             </select>
           </div>
         </div>
         <div>
           <div class="form-group">
-            <label class="form-label">見込み金額（円）</label>
-            <input type="number" class="form-control" id="prospect-amount" placeholder="0">
+            <label class="form-label">重要度</label>
+            <select class="form-control" id="prospect-importance">
+              <option value="">未設定</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
           </div>
         </div>
         <div>
           <div class="form-group">
-            <label class="form-label">受注見込み日</label>
-            <input type="date" class="form-control" id="prospect-date">
+            <label class="form-label">市場規模</label>
+            <select class="form-control" id="prospect-market-size">
+              <option value="">未設定</option>
+              <option value="A">大（1000万超）</option>
+              <option value="B">中（300〜1000万）</option>
+              <option value="C">小（300万未満）</option>
+            </select>
           </div>
         </div>
-
         <div>
           <div class="form-group">
             <label class="form-label">リピート/スポット</label>
@@ -993,10 +1009,61 @@
         </div>
         <div class="span-2">
           <div class="form-group">
+            <label class="form-label">時期</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-control" id="prospect-timing-type" onchange="toggleTimingFields()" style="width:120px;flex-shrink:0">
+                <option value="">未設定</option>
+                <option value="月次">月次</option>
+                <option value="中期">中期</option>
+              </select>
+              <div id="timing-monthly" style="display:none;gap:8px;flex:1;display:none">
+                <select class="form-control" id="prospect-timing-year" style="width:100px">
+                  <option value="">年</option>
+                  <option value="2026">2026年</option>
+                  <option value="2027">2027年</option>
+                  <option value="2028">2028年</option>
+                  <option value="2029">2029年</option>
+                </select>
+                <select class="form-control" id="prospect-timing-month">
+                  <option value="">月</option>
+                  <option value="4">4月</option>
+                  <option value="5">5月</option>
+                  <option value="6">6月</option>
+                  <option value="7">7月</option>
+                  <option value="8">8月</option>
+                  <option value="9">9月</option>
+                  <option value="10">10月</option>
+                  <option value="11">11月</option>
+                  <option value="12">12月</option>
+                  <option value="1">1月</option>
+                  <option value="2">2月</option>
+                  <option value="3">3月</option>
+                </select>
+              </div>
+              <div id="timing-midterm" style="display:none;flex:1">
+                <select class="form-control" id="prospect-timing-label">
+                  <option value="">選択</option>
+                  <option value="1年以内">1年以内</option>
+                  <option value="1年後">1年後</option>
+                  <option value="2年後">2年後</option>
+                  <option value="3年以上">3年以上</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="span-2">
+          <div class="form-group">
             <label class="form-label">案件担当者</label>
             <select class="form-control" id="prospect-assigned-to">
               <option value="">未設定</option>
             </select>
+          </div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label class="form-label">見込み金額（円）</label>
+            <input type="number" class="form-control" id="prospect-amount" placeholder="0">
           </div>
         </div>
         <div class="span-2">
@@ -1094,7 +1161,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== 定数 =====
 const STATUS_LABELS = {
-  1: '情報収集中', 2: 'アプローチ中', 3: 'ヒアリング',
+  1: '情報収集中', 2: 'コンタクト中', 3: 'ヒアリング',
   4: '設計・積算中', 5: '見積提出', 6: '交渉',
   7: '内示・受注確定', 8: '失注', 9: '対象外'
 };
@@ -1328,7 +1395,7 @@ async function saveCompany() {
 
 // ===== 案件 =====
 async function loadProspects() {
-  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department)').order('created_at', { ascending: false });
+  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department, section), prospect_categories(category)').is('deleted_at', null).order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
   prospects = data;
   renderProspects();
@@ -1343,7 +1410,7 @@ function renderProspects() {
   let filtered = prospects.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
-    return matchSearch && matchStatus && matchConfidence;
+    return matchSearch && matchStatus;
   });
 
   const list = document.getElementById('prospect-list');
@@ -1358,12 +1425,13 @@ function renderProspects() {
         <span class="prospect-item-title">${esc(p.title)}</span>
         <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
       </div>
-      <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="color:var(--text-faint)">担当：${esc(p.users?.name || '未設定')}</span></div>
+      <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="color:var(--text-faint)">担当：${esc(p.users?.name || '未設定')}${p.users?.section ? `（${p.users.section}）` : ''}</span></div>
       <div class="prospect-item-meta">
+        ${p.prospect_type ? `<span class="badge prospect-type-${p.prospect_type}">${esc(p.prospect_type)}</span>` : ''}
+        ${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : ''}
         ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
-        ${p.category ? `<span style="font-size:11px;color:var(--text-muted)">${esc(p.category)}</span>` : ''}
-        ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
-        ${p.expected_date ? `<span style="font-size:11px;color:var(--text-faint)">${esc(p.expected_date)}</span>` : ''}
+        ${(p.prospect_categories||[]).map(c => `<span style="font-size:11px;color:var(--text-muted)">${esc(c.category)}</span>`).join(' ')}
+        ${formatTiming(p) !== '—' ? `<span style="font-size:11px;color:var(--text-muted)">${formatTiming(p)}</span>` : ''}
       </div>
     </div>
   `).join('');
@@ -1391,21 +1459,27 @@ async function selectProspect(id) {
       <div class="detail-company-name" style="font-size:16px">${esc(p.title)}</div>
       <div class="detail-meta" style="margin-top:6px">
         <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
+        ${p.confidence ? `<span class="badge confidence-${p.confidence}">${p.confidence}％</span>` : ''}
         ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
         ${p.category ? `<span class="badge" style="background:var(--bg);color:var(--text-muted)">${esc(p.category)}</span>` : ''}
       </div>
     </div>
     <div class="detail-body">
       <div class="info-grid">
-        <span class="info-label">案件担当者</span><span class="info-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `（${p.users.department}）` : ''}</span>
+        <span class="info-label">案件担当者</span><span class="info-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `（${p.users.department}${p.users.section ? ' ' + p.users.section : ''}）` : ''}</span>
         <span class="info-label">得意先</span><span class="info-value"><span class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span></span>
+        <span class="info-label">保持/新規</span><span class="info-value">${esc(p.prospect_type || '—')}</span>
+        <span class="info-label">重要度</span><span class="info-value">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</span>
+        <span class="info-label">市場規模</span><span class="info-value">${p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '—'}</span>
+        <span class="info-label">種別</span><span class="info-value">${(p.prospect_categories||[]).length > 0 ? (p.prospect_categories||[]).map(c => `<span class="badge" style="background:var(--bg);color:var(--text-muted);margin-right:4px">${esc(c.category)}</span>`).join('') : '—'}</span>
+        <span class="info-label">時期</span><span class="info-value">${formatTiming(p)}</span>
         <span class="info-label">見込み金額</span><span class="info-value amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</span>
-        <span class="info-label">受注見込み日</span><span class="info-value">${esc(p.expected_date || '—')}</span>
         <span class="info-label">備考</span><span class="info-value">${esc(p.notes || '—')}</span>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:20px">
         <button class="btn btn-secondary btn-sm" onclick="editProspect('${p.id}')">編集</button>
         <button class="btn btn-primary btn-sm" onclick="openActivityModalForProspect('${p.id}','${p.company_id}')">活動を記録</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProspect('${p.id}')">削除</button>
       </div>
 
       <div class="tabs">
@@ -1451,6 +1525,34 @@ async function selectProspect(id) {
   `;
 }
 
+function toggleTimingFields() {
+  const type = document.getElementById('prospect-timing-type').value;
+  const monthly = document.getElementById('timing-monthly');
+  const midterm = document.getElementById('timing-midterm');
+  if (monthly) monthly.style.display = type === '月次' ? 'flex' : 'none';
+  if (midterm) midterm.style.display = type === '中期' ? 'block' : 'none';
+}
+
+function formatTiming(p) {
+  if (!p.timing_type) return '—';
+  if (p.timing_type === '月次') {
+    return p.timing_year && p.timing_month ? `${p.timing_year}年${p.timing_month}月` : '—';
+  }
+  return p.timing_label || '—';
+}
+
+async function deleteProspect(id) {
+  if (!confirm('この案件を削除しますか？\n（削除後も管理者がデータを復元できます）')) return;
+  const { error } = await db.from('prospects').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+  if (error) { alert('削除に失敗しました: ' + error.message); return; }
+  document.getElementById('prospect-detail').innerHTML = `
+    <button class="sp-back-btn" onclick="spBack('prospects')">← 一覧に戻る</button>
+    <div class="empty"><div class="empty-icon">✓</div><div class="empty-text">削除しました</div></div>
+  `;
+  selectedProspectId = null;
+  loadProspects();
+}
+
 function switchProspectTab(el, tabId) {
   el.closest('.detail-body').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -1465,14 +1567,26 @@ async function openProspectModal() {
   document.getElementById('prospect-modal-title').textContent = '案件登録';
   document.getElementById('prospect-title').value = '';
   document.getElementById('prospect-status').value = '1';
-  document.getElementById('prospect-category').value = '';
   document.getElementById('prospect-amount').value = '';
-  document.getElementById('prospect-date').value = '';
+  document.getElementById('prospect-type').value = '';
+  document.getElementById('prospect-importance').value = '';
+  document.getElementById('prospect-market-size').value = '';
   document.getElementById('prospect-contract-type').value = '';
+  // チェックボックスを動的生成（初回のみ）
+  const cbContainer = document.getElementById('prospect-category-cbs');
+  if (cbContainer && cbContainer.children.length === 0) {
+    cbContainer.innerHTML = ['分析','水質','大気','調査','薬品','工事','給排水設備工事','熱源空調設備工事','その他工事','ビル管理'].map(c =>
+      `<label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;white-space:nowrap">
+        <input type="checkbox" class="prospect-category-cb" value="${c}"> ${c}
+      </label>`
+    ).join('');
+  }
+  document.querySelectorAll('.prospect-category-cb').forEach(cb => cb.checked = false);
+  document.getElementById('prospect-timing-type').value = '';
+  toggleTimingFields();
   document.getElementById('prospect-notes').value = '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
-  // 活動履歴と同じ方式：最初から全員表示
   await loadUserSelect('prospect-assigned-to', null);
   openModal('prospect-modal');
 }
@@ -1495,12 +1609,24 @@ function editProspect(id) {
   document.getElementById('prospect-modal-title').textContent = '案件編集';
   document.getElementById('prospect-title').value = p.title || '';
   document.getElementById('prospect-status').value = p.status || 1;
-  document.getElementById('prospect-category').value = p.category || '';
   document.getElementById('prospect-amount').value = p.expected_amount || '';
-  document.getElementById('prospect-date').value = p.expected_date || '';
+  document.getElementById('prospect-type').value = p.prospect_type || '';
+  document.getElementById('prospect-importance').value = p.importance || '';
+  document.getElementById('prospect-market-size').value = p.market_size || '';
   document.getElementById('prospect-contract-type').value = p.contract_type || '';
+  document.getElementById('prospect-timing-type').value = p.timing_type || '';
+  toggleTimingFields();
+  if (p.timing_type === '月次') {
+    if (document.getElementById('prospect-timing-year')) document.getElementById('prospect-timing-year').value = p.timing_year || '';
+    if (document.getElementById('prospect-timing-month')) document.getElementById('prospect-timing-month').value = p.timing_month || '';
+  } else if (p.timing_type === '中期') {
+    if (document.getElementById('prospect-timing-label')) document.getElementById('prospect-timing-label').value = p.timing_label || '';
+  }
   document.getElementById('prospect-notes').value = p.notes || '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
+  document.querySelectorAll('.prospect-category-cb').forEach(cb => {
+    cb.checked = (p.prospect_categories || []).some(c => c.category === cb.value);
+  });
   loadCompanySelect('prospect-company', p.company_id);
   loadUserSelect('prospect-assigned-to', p.assigned_to);
   openModal('prospect-modal');
@@ -1516,14 +1642,22 @@ async function saveProspect() {
     title,
     company_id: companyId,
     status: parseInt(document.getElementById('prospect-status').value),
-    category: document.getElementById('prospect-category').value || null,
     expected_amount: document.getElementById('prospect-amount').value || null,
-    expected_date: document.getElementById('prospect-date').value || null,
     assigned_to: document.getElementById('prospect-assigned-to').value || null,
+    prospect_type: document.getElementById('prospect-type').value || null,
+    importance: document.getElementById('prospect-importance').value || null,
+    market_size: document.getElementById('prospect-market-size').value || null,
     contract_type: document.getElementById('prospect-contract-type').value || null,
+    timing_type: document.getElementById('prospect-timing-type').value || null,
+    timing_year: document.getElementById('prospect-timing-year')?.value ? parseInt(document.getElementById('prospect-timing-year').value) : null,
+    timing_month: document.getElementById('prospect-timing-month')?.value ? parseInt(document.getElementById('prospect-timing-month').value) : null,
+    timing_label: document.getElementById('prospect-timing-label')?.value || null,
     notes: document.getElementById('prospect-notes').value.trim() || null,
     updated_at: new Date().toISOString()
   };
+
+  // 選択された種別を取得
+  const selectedCategories = [...document.querySelectorAll('.prospect-category-cb:checked')].map(cb => cb.value);
 
   const editId = document.getElementById('prospect-edit-id').value;
   let error;
@@ -1557,6 +1691,14 @@ async function saveProspect() {
   }
 
   if (error) { showAlert('prospect-modal-alert', 'エラー: ' + error.message, 'error'); return; }
+
+  // 種別を保存（既存を削除して再挿入）
+  const prospectId = editId || (await db.from('prospects').select('id').eq('title', title).eq('company_id', companyId).order('created_at', {ascending: false}).limit(1).single()).data?.id;
+  if (prospectId && selectedCategories.length > 0) {
+    await db.from('prospect_categories').delete().eq('prospect_id', prospectId);
+    await db.from('prospect_categories').insert(selectedCategories.map(c => ({ prospect_id: prospectId, category: c })));
+  }
+
   closeModal('prospect-modal');
   loadProspects();
 }
@@ -1721,7 +1863,7 @@ async function saveActivity() {
 
 // ===== ユーティリティ =====
 async function loadUsers() {
-  const { data } = await db.from('users').select('id,name,department').order('name');
+  const { data } = await db.from('users').select('id,name,department,section').order('name');
   users = data || [];
 }
 
@@ -1732,7 +1874,8 @@ async function loadUserSelect(selectId, selectedId) {
   users.forEach(u => {
     const opt = document.createElement('option');
     opt.value = u.id;
-    opt.textContent = `${u.name}（${u.department || ''}）`;
+    const label = u.section ? `${u.name}（${u.department || ''} ${u.section}）` : `${u.name}（${u.department || ''}）`;
+    opt.textContent = label;
     if (u.id === selectedId) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -1882,7 +2025,7 @@ document.addEventListener('click', (e) => {
 });
 
 function checkAllMeeting(checked) {
-  document.querySelectorAll('.meeting-status-cb,.meeting-category-cb,.meeting-contract-cb,.meeting-assigned-cb').forEach(cb => cb.checked = checked);
+  document.querySelectorAll('.meeting-status-cb,.meeting-confidence-cb,.meeting-category-cb,.meeting-contract-cb,.meeting-assigned-cb').forEach(cb => cb.checked = checked);
   filterMeeting();
 }
 
@@ -1892,21 +2035,30 @@ function getCheckedValues(className) {
 
 async function loadMeeting() {
   const { data, error } = await db.from('prospects')
-    .select('*, companies(name), users(name), prospect_histories(status_from, status_to, changed_at, users(name))')
+    .select('*, companies(name), users(name, department, section), prospect_histories(status_from, status_to, changed_at, users(name)), prospect_categories(category)')
     .not('status', 'in', '(8,9)')
-    .order('status', { ascending: true });
+    .is('deleted_at', null)
+    .order('importance', { ascending: true, nullsFirst: false });
   if (error) { console.error(error); return; }
   meetingProspects = data || [];
 
   await loadUsers();
 
   // ステータスチェックボックス
-  const statusMap = {1:'情報収集中',2:'アプローチ中',3:'ヒアリング',4:'設計・積算中',5:'見積提出',6:'交渉',7:'内示・受注確定'};
+  const statusMap = {1:'情報収集中',2:'コンタクト中',3:'ヒアリング',4:'設計・積算中',5:'見積提出',6:'交渉',7:'内示・受注確定'};
   const statusContainer = document.getElementById('meeting-status-cbs');
   if (statusContainer) {
     statusContainer.innerHTML = Object.entries(statusMap).map(([v, label]) =>
       `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-status-cb" value="${v}" onchange="filterMeeting()" checked> ${label}</label>`
     ).join('');
+  }
+
+  // 重要度チェックボックス
+  const confidenceContainer = document.getElementById('meeting-confidence-cbs');
+  if (confidenceContainer) {
+    confidenceContainer.innerHTML = ['A','B','C'].map(c =>
+      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="${c}" onchange="filterMeeting()" checked> ${c}</label>`
+    ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
   // 種別チェックボックス
@@ -1938,19 +2090,29 @@ async function loadMeeting() {
 
 function filterMeeting() {
   const statuses = getCheckedValues('meeting-status-cb').map(Number);
+  const importances = getCheckedValues('meeting-confidence-cb');
   const categories = getCheckedValues('meeting-category-cb');
   const contracts = getCheckedValues('meeting-contract-cb');
   const assigneds = getCheckedValues('meeting-assigned-cb');
 
   let filtered = meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
+    const matchImportance = importances.length === 0 || importances.includes(p.importance) || (importances.includes('none') && !p.importance);
+    const pCategories = (p.prospect_categories || []).map(c => c.category);
+    const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCategories.length === 0 : pCategories.includes(c));
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
-    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned;
+    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned;
   });
 
-  filtered.sort((a, b) => a.status - b.status);
+  // 重要度順→ステータス順でソート
+  const importanceOrder = { 'A': 1, 'B': 2, 'C': 3 };
+  filtered.sort((a, b) => {
+    const ia = importanceOrder[a.importance] || 4;
+    const ib = importanceOrder[b.importance] || 4;
+    if (ia !== ib) return ia - ib;
+    return a.status - b.status;
+  });
 
   const totalAmount = filtered.reduce((sum, p) => sum + (Number(p.expected_amount) || 0), 0);
   document.getElementById('meeting-count').textContent = `${filtered.length}件`;
@@ -1958,7 +2120,7 @@ function filterMeeting() {
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -1968,48 +2130,62 @@ function filterMeeting() {
     const latestChangeHtml = latestChange
       ? `<span style="font-size:11px;white-space:nowrap">${esc(latestChange.changed_at?.slice(0,10))}<br><span class="badge status-${latestChange.status_from}" style="font-size:10px">${STATUS_LABELS[latestChange.status_from]}</span>→<span class="badge status-${latestChange.status_to}" style="font-size:10px">${STATUS_LABELS[latestChange.status_to]}</span></span>`
       : '<span style="color:var(--text-faint);font-size:11px">—</span>';
-    return `<tr>
-      <td style="font-size:12px">${esc(p.users?.name || '未設定')}</td>
+    const categoryBadges = (p.prospect_categories || []).map(c => `<span style="font-size:11px;color:var(--text-muted)">${esc(c.category)}</span>`).join('<br>');
+    return `<tr style="font-size:12px">
+      <td style="text-align:center">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</td>
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
+      <td style="text-align:center;color:var(--text-muted)">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</td>
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
+      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
+      <td style="color:var(--text-muted)">${(p.prospect_categories || []).map(c => c.category).join('・') || '—'}</td>
+      <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
+      <td style="color:var(--text-muted)">${esc(p.users?.name || '—')}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
       <td>${latestChangeHtml}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(p.category || '—')}</td>
-      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
+      <td style="color:var(--text-muted)">${formatTiming(p)}</td>
       <td style="text-align:right" class="amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(p.expected_date || '—')}</td>
-      <td style="font-size:12px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.notes || '—')}</td>
     </tr>`;
   }).join('');
 }
 
 function getFilteredMeetingData() {
   const statuses = getCheckedValues('meeting-status-cb').map(Number);
+  const importances = getCheckedValues('meeting-confidence-cb');
   const categories = getCheckedValues('meeting-category-cb');
   const contracts = getCheckedValues('meeting-contract-cb');
   const assigneds = getCheckedValues('meeting-assigned-cb');
   return meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
+    const matchImportance = importances.length === 0 || importances.includes(p.importance) || (importances.includes('none') && !p.importance);
+    const pCategories = (p.prospect_categories || []).map(c => c.category);
+    const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCategories.length === 0 : pCategories.includes(c));
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
-    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned;
+    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned;
   });
 }
 
 function buildExportRows() {
-  const headers = ['担当者','得意先','案件名','ステータス','種別','区分','見込み金額','見込み日','備考'];
-  const rows = getFilteredMeetingData().map(p => [
-    p.users?.name || '',
-    p.companies?.name || '',
-    p.title,
-    STATUS_LABELS[p.status],
-    p.category || '',
-    p.contract_type || '',
-    p.expected_amount || '',
-    p.expected_date || '',
-    p.notes || ''
-  ]);
+  const headers = ['重要度','得意先','企業規模','案件名','区分','種別','担当課','担当者','ステータス','直近変更','時期','見込み額'];
+  const rows = getFilteredMeetingData().map(p => {
+    const histories = (p.prospect_histories || []).sort((a,b) => b.changed_at?.localeCompare(a.changed_at));
+    const latestChange = histories.find(h => h.status_from !== null);
+    const latestChangeText = latestChange ? `${latestChange.changed_at?.slice(0,10)} ${STATUS_LABELS[latestChange.status_from]}→${STATUS_LABELS[latestChange.status_to]}` : '';
+    return [
+      p.importance || '',
+      p.companies?.name || '',
+      p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '',
+      p.title,
+      p.contract_type || '',
+      (p.prospect_categories || []).map(c => c.category).join('・'),
+      p.users?.section || '',
+      p.users?.name || '',
+      STATUS_LABELS[p.status],
+      latestChangeText,
+      formatTiming(p),
+      p.expected_amount || ''
+    ];
+  });
   return { headers, rows };
 }
 
@@ -2087,13 +2263,23 @@ async function jumpToProspect(prospectId) {
   selectProspect(prospectId);
 }
 
+// ===== 初期ロード =====
+// 案件種別チェックボックスを初期生成
+const cbContainer = document.getElementById('prospect-category-cbs');
+if (cbContainer) {
+  cbContainer.innerHTML = ['分析','水質','大気','調査','薬品','工事','給排水設備工事','熱源空調設備工事','その他工事','ビル管理'].map(c =>
+    `<label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;white-space:nowrap">
+      <input type="checkbox" class="prospect-category-cb" value="${c}"> ${c}
+    </label>`
+  ).join('');
+}
 
 // ===== 認証管理 =====
 let currentUser = null;
 let currentUserProfile = null;
 
-// 認証状態の監視
 db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') return;
   if (session?.user) {
     currentUser = session.user;
     await loadUserProfile();
@@ -2115,14 +2301,17 @@ async function loadUserProfile() {
 function showApp() {
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('reset-screen').classList.remove('active');
+  document.getElementById('password-screen').classList.remove('active');
   document.querySelector('.app > header').style.display = '';
-  document.querySelector('.app > .main') && (document.querySelector('.app > .main').style.display = '');
+  const main = document.querySelector('.main');
+  if (main) main.style.display = '';
   loadCompanies();
 }
 
 function showLoginForm() {
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('reset-screen').classList.remove('active');
+  document.getElementById('password-screen').classList.remove('active');
   document.querySelector('.app > header').style.display = 'none';
   const main = document.querySelector('.main');
   if (main) main.style.display = 'none';
@@ -2133,23 +2322,30 @@ function showResetForm() {
   document.getElementById('reset-screen').classList.add('active');
 }
 
+function showPasswordScreen(type) {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('reset-screen').classList.remove('active');
+  document.getElementById('password-screen').classList.add('active');
+  document.querySelector('.app > header').style.display = 'none';
+  const main = document.querySelector('.main');
+  if (main) main.style.display = 'none';
+  const sub = document.getElementById('password-screen-sub');
+  if (sub) sub.textContent = type === 'invite' ? 'はじめにパスワードを設定してください' : '新しいパスワードを設定してください';
+}
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   const btn = document.getElementById('login-btn');
   const alertEl = document.getElementById('login-alert');
-
   if (!email || !password) {
     alertEl.innerHTML = '<div class="alert alert-error">メールアドレスとパスワードを入力してください</div>';
     return;
   }
-
   btn.disabled = true;
   btn.textContent = 'ログイン中...';
   alertEl.innerHTML = '';
-
   const { error } = await db.auth.signInWithPassword({ email, password });
-
   if (error) {
     alertEl.innerHTML = '<div class="alert alert-error">メールアドレスまたはパスワードが正しくありません</div>';
     btn.disabled = false;
@@ -2165,20 +2361,18 @@ async function doReset() {
   const email = document.getElementById('reset-email').value.trim();
   const btn = document.getElementById('reset-btn');
   const alertEl = document.getElementById('reset-alert');
-
   if (!email) {
     alertEl.innerHTML = '<div class="alert alert-error">メールアドレスを入力してください</div>';
     return;
   }
-
   btn.disabled = true;
   btn.textContent = '送信中...';
   alertEl.innerHTML = '';
-
-  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://dxnasukan.github.io/nasu-crm' });
-
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://dxnasukan.github.io/nasu-crm'
+  });
   if (error) {
-    alertEl.innerHTML = '<div class="alert alert-error">送信に失敗しました。メールアドレスを確認してください</div>';
+    alertEl.innerHTML = '<div class="alert alert-error">送信に失敗しました。しばらく待ってから再試行してください</div>';
     btn.disabled = false;
     btn.textContent = 'リセットリンクを送信';
   } else {
@@ -2188,30 +2382,11 @@ async function doReset() {
   }
 }
 
-
-// ===== パスワード設定画面の処理 =====
-function showPasswordScreen(type) {
-  document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('reset-screen').classList.remove('active');
-  document.getElementById('password-screen').classList.add('active');
-  document.querySelector('.app > header').style.display = 'none';
-  const main = document.querySelector('.main');
-  if (main) main.style.display = 'none';
-
-  const sub = document.getElementById('password-screen-sub');
-  if (type === 'invite') {
-    sub.textContent = 'はじめにパスワードを設定してください';
-  } else {
-    sub.textContent = '新しいパスワードを設定してください';
-  }
-}
-
 async function doSetPassword() {
   const password = document.getElementById('new-password').value;
   const confirm = document.getElementById('new-password-confirm').value;
   const btn = document.getElementById('password-btn');
   const alertEl = document.getElementById('password-alert');
-
   if (!password || !confirm) {
     alertEl.innerHTML = '<div class="alert alert-error">パスワードを入力してください</div>';
     return;
@@ -2224,13 +2399,10 @@ async function doSetPassword() {
     alertEl.innerHTML = '<div class="alert alert-error">パスワードが一致しません</div>';
     return;
   }
-
   btn.disabled = true;
   btn.textContent = '設定中...';
   alertEl.innerHTML = '';
-
   const { error } = await db.auth.updateUser({ password });
-
   if (error) {
     alertEl.innerHTML = '<div class="alert alert-error">設定に失敗しました。もう一度お試しください</div>';
     btn.disabled = false;
@@ -2246,19 +2418,11 @@ async function doSetPassword() {
   }
 }
 
-// URLのハッシュからtypeを検出（招待・リセット）
+// URLハッシュから招待・リセットを検出
 (function checkUrlHash() {
   const hash = window.location.hash;
   if (hash.includes('type=invite') || hash.includes('type=recovery')) {
     const type = hash.includes('type=invite') ? 'invite' : 'recovery';
-    // Supabaseがハッシュからセッションを自動設定するのを待つ
-    db.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') return;
-      if ((event === 'SIGNED_IN') && hash.includes('type=invite')) {
-        showPasswordScreen('invite');
-      }
-    });
-    // ハッシュのトークンをSupabaseに渡す
     const params = new URLSearchParams(hash.substring(1));
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
@@ -2274,9 +2438,10 @@ document.querySelector('.app > header').style.display = 'none';
 const _mainEl = document.querySelector('.main');
 if (_mainEl) _mainEl.style.display = 'none';
 
-// ===== 初期ロード =====
-// 起動時にセッションを明示的に確認（F5リロード対応）
+// 起動時にセッションを確認（F5リロード対応）
 (async () => {
+  const hash = window.location.hash;
+  if (hash.includes('type=invite') || hash.includes('type=recovery')) return;
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
@@ -2286,6 +2451,7 @@ if (_mainEl) _mainEl.style.display = 'none';
     showLoginForm();
   }
 })();
+
 </script>
 </body>
 </html>

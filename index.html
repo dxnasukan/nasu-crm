@@ -863,6 +863,14 @@
                 oninput="filterMeeting()">
             </div>
 
+            <!-- 担当課 -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当課</span>
+              <select id="meeting-section-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
+                <option value="">すべて</option>
+              </select>
+            </div>
+
             <!-- リセット -->
             <button class="btn btn-secondary btn-sm" onclick="resetMeetingFilters()">リセット</button>
           </div>
@@ -2460,6 +2468,7 @@ function resetMeetingFilters() {
   // ステータス・種別セレクト
   document.getElementById('meeting-status-select').value = '';
   document.getElementById('meeting-category-select').value = '';
+  document.getElementById('meeting-section-select').value = '';
   // 担当者検索
   document.getElementById('meeting-assigned-search').value = '';
   // ボタンフィルター

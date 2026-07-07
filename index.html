@@ -534,6 +534,56 @@
   .importance-A { background: #fee2e2; color: #991b1b; font-weight: 600; }
   .importance-B { background: #fef3c7; color: #92400e; }
   .importance-C { background: #e0f2fe; color: #0369a1; }
+
+  /* 案件詳細2列グリッド */
+  .info-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .info-grid-2col .info-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+  .info-grid-2col .info-row:last-child { border-bottom: none; }
+  .info-grid-2col .info-row:nth-child(odd) { border-right: 1px solid var(--border); }
+  .info-grid-2col .info-cell-label {
+    padding: 7px 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg);
+    font-weight: 500;
+    border-right: 1px solid var(--border);
+  }
+  .info-grid-2col .info-cell-value {
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* 活動カード */
+  .activity-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: var(--surface);
+  }
+  .activity-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .activity-card-date { font-size: 11px; color: var(--text-faint); }
+  .activity-card-type { font-size: 11px; color: var(--text-muted); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+  .activity-card-summary { font-size: 13px; margin-bottom: 4px; }
+  .activity-card-next { font-size: 12px; color: var(--accent); }
 </style>
 </head>
 <body>
@@ -1447,18 +1497,46 @@ async function selectProspect(id) {
       </div>
     </div>
     <div class="detail-body">
-      <div class="info-grid">
-        <span class="info-label">案件担当者</span><span class="info-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `（${p.users.department}）` : ''}</span>
-        <span class="info-label">得意先</span><span class="info-value"><span class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span></span>
-        <span class="info-label">新規/保持</span><span class="info-value">${esc(p.prospect_type || '—')}</span>
-        <span class="info-label">重要度</span><span class="info-value">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</span>
-        <span class="info-label">市場規模</span><span class="info-value">${p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '—'}</span>
-        <span class="info-label">導入時期</span><span class="info-value">${formatTiming(p)}</span>
-        <span class="info-label">見込み金額</span><span class="info-value amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</span>
-        <span class="info-label">受注見込み日</span><span class="info-value">${esc(p.expected_date || '—')}</span>
-        <span class="info-label">備考</span><span class="info-value">${esc(p.notes || '—')}</span>
+      <div class="info-grid-2col">
+        <div class="info-row">
+          <div class="info-cell-label">担当者</div>
+          <div class="info-cell-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `<span style="font-size:11px;color:var(--text-muted)">（${p.users.department}）</span>` : ''}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">見込み金額</div>
+          <div class="info-cell-value amount" style="font-weight:600">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">得意先</div>
+          <div class="info-cell-value"><span class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span></div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">受注見込み日</div>
+          <div class="info-cell-value">${esc(p.expected_date || '—')}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">新規/保持</div>
+          <div class="info-cell-value">${esc(p.prospect_type || '—')}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">市場規模</div>
+          <div class="info-cell-value">${p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '—'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">重要度</div>
+          <div class="info-cell-value">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">導入時期</div>
+          <div class="info-cell-value">${formatTiming(p)}</div>
+        </div>
+        ${p.notes ? `<div class="info-row" style="grid-column:span 2">
+          <div class="info-cell-label">備考</div>
+          <div class="info-cell-value">${esc(p.notes)}</div>
+        </div>` : ''}
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:20px">
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
         <button class="btn btn-secondary btn-sm" onclick="editProspect('${p.id}')">編集</button>
         <button class="btn btn-primary btn-sm" onclick="openActivityModalForProspect('${p.id}','${p.company_id}')">活動を記録</button>
       </div>
@@ -1469,19 +1547,36 @@ async function selectProspect(id) {
       </div>
 
       <div id="ptab-activities">
-        ${(acData||[]).length === 0 ? '<div class="empty"><div class="empty-text">活動履歴がありません</div></div>' :
-          `<div class="timeline">${(acData||[]).map(a => `
-            <div class="timeline-item">
-              <div class="timeline-dot"></div>
-              <div class="timeline-line"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">${esc(a.activity_date)} <span class="timeline-type">${esc(a.activity_type||'')}</span></div>
-                <div class="timeline-summary">${esc(a.summary)}</div>
-                ${a.next_action ? `<div class="timeline-next">→ ${esc(a.next_action)}</div>` : ''}
+        ${(acData||[]).length === 0 ? '<div class="empty"><div class="empty-text">活動履歴がありません</div></div>' : `
+          ${acData.slice(0,3).map(a => `
+            <div class="activity-card">
+              <div class="activity-card-header">
+                <span class="activity-card-date">${esc(a.activity_date)}</span>
+                ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
               </div>
+              <div class="activity-card-summary">${esc(a.summary)}</div>
+              ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
             </div>
-          `).join('')}</div>`
-        }
+          `).join('')}
+          ${acData.length > 3 ? `
+            <div id="ptab-activities-more" style="display:none">
+              ${acData.slice(3).map(a => `
+                <div class="activity-card">
+                  <div class="activity-card-header">
+                    <span class="activity-card-date">${esc(a.activity_date)}</span>
+                    ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
+                  </div>
+                  <div class="activity-card-summary">${esc(a.summary)}</div>
+                  ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+            <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:4px" 
+              onclick="const m=document.getElementById('ptab-activities-more');const b=this;if(m.style.display==='none'){m.style.display='';b.textContent='折りたたむ'}else{m.style.display='none';b.textContent='さらに${acData.length - 3}件を表示'}">
+              さらに${acData.length - 3}件を表示
+            </button>
+          ` : ''}
+        `}
       </div>
 
       <div id="ptab-history" style="display:none">

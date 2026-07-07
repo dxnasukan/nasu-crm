@@ -2418,6 +2418,20 @@ async function doSetPassword() {
   }
 }
 
+// ===== 認証状態の監視（ログイン・ログアウト検知）=====
+db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') return;
+  if (event === 'SIGNED_IN' && session?.user) {
+    currentUser = session.user;
+    await loadUserProfile();
+    showApp();
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    currentUserProfile = null;
+    showLoginForm();
+  }
+});
+
 // URLハッシュから招待・リセットを検出
 (function checkUrlHash() {
   const hash = window.location.hash;

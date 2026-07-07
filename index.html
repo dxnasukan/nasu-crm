@@ -774,21 +774,22 @@
           <table id="meeting-table">
             <thead>
               <tr>
-                <th>重要度</th>
-                <th>担当者</th>
+                <th style="width:50px;text-align:center">重要度</th>
                 <th>得意先</th>
+                <th style="width:60px;text-align:center">規模</th>
                 <th>案件名</th>
-                <th>ステータス</th>
-                <th>直近変更</th>
+                <th style="width:70px">区分</th>
                 <th>種別</th>
-                <th>区分</th>
-                <th>見込み金額</th>
-                <th>見込み日</th>
-                <th>備考</th>
+                <th>担当課</th>
+                <th>担当者</th>
+                <th style="width:100px">ステータス</th>
+                <th style="width:140px">直近変更</th>
+                <th style="width:80px">時期</th>
+                <th style="width:100px;text-align:right">見込み額</th>
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="11" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="12" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1950,8 +1951,9 @@ function getCheckedValues(className) {
 
 async function loadMeeting() {
   const { data, error } = await db.from('prospects')
-    .select('*, companies(name), users(name), prospect_histories(status_from, status_to, changed_at, users(name))')
+    .select('*, companies(name), users(name, department, section), prospect_histories(status_from, status_to, changed_at, users(name)), prospect_categories(category)')
     .not('status', 'in', '(8,9)')
+    .is('deleted_at', null)
     .order('importance', { ascending: true, nullsFirst: false });
   if (error) { console.error(error); return; }
   meetingProspects = data || [];
@@ -2032,7 +2034,7 @@ function filterMeeting() {
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -2042,18 +2044,19 @@ function filterMeeting() {
     const latestChangeHtml = latestChange
       ? `<span style="font-size:11px;white-space:nowrap">${esc(latestChange.changed_at?.slice(0,10))}<br><span class="badge status-${latestChange.status_from}" style="font-size:10px">${STATUS_LABELS[latestChange.status_from]}</span>→<span class="badge status-${latestChange.status_to}" style="font-size:10px">${STATUS_LABELS[latestChange.status_to]}</span></span>`
       : '<span style="color:var(--text-faint);font-size:11px">—</span>';
-    return `<tr>
-      <td>${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
-      <td style="font-size:12px">${esc(p.users?.name || '未設定')}</td>
+    return `<tr style="font-size:12px">
+      <td style="text-align:center">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</td>
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
+      <td style="text-align:center;color:var(--text-muted)">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</td>
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
+      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
+      <td style="color:var(--text-muted)">${(p.prospect_categories || []).map(c => c.category).join('・') || '—'}</td>
+      <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
+      <td style="color:var(--text-muted)">${esc(p.users?.name || '—')}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
       <td>${latestChangeHtml}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(p.category || '—')}</td>
-      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
+      <td style="color:var(--text-muted)">${formatTiming(p)}</td>
       <td style="text-align:right" class="amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(p.expected_date || '—')}</td>
-      <td style="font-size:12px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.notes || '—')}</td>
     </tr>`;
   }).join('');
 }
@@ -2075,7 +2078,7 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['重要度','担当者','得意先','案件名','ステータス','種別','区分','見込み金額','見込み日','備考'];
+  const headers = ['重要度','得意先','企業規模','案件名','区分','種別','担当課','担当者','ステータス','直近変更','時期','見込み額'];
   const rows = getFilteredMeetingData().map(p => [
     p.importance || '',
     p.users?.name || '',

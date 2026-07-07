@@ -746,7 +746,7 @@
               <div id="meeting-status-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">確度</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">重要度</div>
               <div id="meeting-confidence-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
             </div>
             <div>
@@ -774,7 +774,7 @@
           <table id="meeting-table">
             <thead>
               <tr>
-                <th>確度</th>
+                <th>重要度</th>
                 <th>担当者</th>
                 <th>得意先</th>
                 <th>案件名</th>
@@ -1572,7 +1572,6 @@ async function saveProspect() {
     expected_amount: document.getElementById('prospect-amount').value || null,
     expected_date: document.getElementById('prospect-date').value || null,
     assigned_to: document.getElementById('prospect-assigned-to').value || null,
-    confidence: document.getElementById('prospect-confidence').value ? parseInt(document.getElementById('prospect-confidence').value) : null,
     contract_type: document.getElementById('prospect-contract-type').value || null,
     importance: document.getElementById('prospect-importance').value || null,
     market_size: document.getElementById('prospect-market-size').value || null,
@@ -1953,7 +1952,7 @@ async function loadMeeting() {
   const { data, error } = await db.from('prospects')
     .select('*, companies(name), users(name), prospect_histories(status_from, status_to, changed_at, users(name))')
     .not('status', 'in', '(8,9)')
-    .order('confidence', { ascending: false, nullsFirst: false });
+    .order('importance', { ascending: true, nullsFirst: false });
   if (error) { console.error(error); return; }
   meetingProspects = data || [];
 
@@ -1971,8 +1970,8 @@ async function loadMeeting() {
   // 確度チェックボックス
   const confidenceContainer = document.getElementById('meeting-confidence-cbs');
   if (confidenceContainer) {
-    confidenceContainer.innerHTML = [20,40,60,80,100].map(c =>
-      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="${c}" onchange="filterMeeting()" checked> ${c}％</label>`
+    confidenceContainer.innerHTML = ['A','B','C'].map(c =>
+      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="${c}" onchange="filterMeeting()" checked> ${c}</label>`
     ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
@@ -2012,7 +2011,7 @@ function filterMeeting() {
 
   let filtered = meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchConfidence = confidences.length === 0 || confidences.includes(p.confidence?.toString()) || (confidences.includes('none') && !p.confidence);
+    const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
     const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
@@ -2020,9 +2019,10 @@ function filterMeeting() {
   });
 
   filtered.sort((a, b) => {
-    const ca = a.confidence || 0;
-    const cb = b.confidence || 0;
-    if (ca !== cb) return cb - ca;
+    if (a.importance !== b.importance) {
+      const order = {'A':0,'B':1,'C':2};
+      return (order[a.importance] ?? 3) - (order[b.importance] ?? 3);
+    }
     return a.status - b.status;
   });
 
@@ -2043,7 +2043,7 @@ function filterMeeting() {
       ? `<span style="font-size:11px;white-space:nowrap">${esc(latestChange.changed_at?.slice(0,10))}<br><span class="badge status-${latestChange.status_from}" style="font-size:10px">${STATUS_LABELS[latestChange.status_from]}</span>→<span class="badge status-${latestChange.status_to}" style="font-size:10px">${STATUS_LABELS[latestChange.status_to]}</span></span>`
       : '<span style="color:var(--text-faint);font-size:11px">—</span>';
     return `<tr>
-      <td>${p.confidence ? `<span class="badge confidence-${p.confidence}">${p.confidence}％</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
+      <td>${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
       <td style="font-size:12px">${esc(p.users?.name || '未設定')}</td>
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
@@ -2066,7 +2066,7 @@ function getFilteredMeetingData() {
   const assigneds = getCheckedValues('meeting-assigned-cb');
   return meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchConfidence = confidences.length === 0 || confidences.includes(p.confidence?.toString()) || (confidences.includes('none') && !p.confidence);
+    const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
     const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
@@ -2077,7 +2077,7 @@ function getFilteredMeetingData() {
 function buildExportRows() {
   const headers = ['確度','担当者','得意先','案件名','ステータス','種別','区分','見込み金額','見込み日','備考'];
   const rows = getFilteredMeetingData().map(p => [
-    p.confidence ? p.confidence + '%' : '',
+    p.importance || '',
     p.users?.name || '',
     p.companies?.name || '',
     p.title,

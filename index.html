@@ -2049,8 +2049,9 @@ function filterMeeting() {
     const pCats = (p.prospect_categories||[]).map(c=>c.category);
     const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCats.length === 0 : pCats.includes(c));
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
-    const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
-    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned;
+    const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
+    const matchType = types.length === 0 || types.includes(p.prospect_type) || (types.includes('none') && !p.prospect_type);
+    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned && matchType;
   });
 
   filtered.sort((a, b) => {
@@ -2108,8 +2109,9 @@ function getFilteredMeetingData() {
     const pCats = (p.prospect_categories||[]).map(c=>c.category);
     const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCats.length === 0 : pCats.includes(c));
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
-    const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
-    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned;
+    const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
+    const matchType = types.length === 0 || types.includes(p.prospect_type) || (types.includes('none') && !p.prospect_type);
+    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned && matchType;
   });
 }
 

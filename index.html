@@ -2175,7 +2175,7 @@ async function doReset() {
   btn.textContent = '送信中...';
   alertEl.innerHTML = '';
 
-  const { error } = await db.auth.resetPasswordForEmail(email);
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://dxnasukan.github.io/nasu-crm' });
 
   if (error) {
     alertEl.innerHTML = '<div class="alert alert-error">送信に失敗しました。メールアドレスを確認してください</div>';

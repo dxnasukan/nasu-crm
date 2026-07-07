@@ -1804,8 +1804,26 @@ async function saveActivity() {
   }
 
   if (error) { showAlert('activity-modal-alert', 'エラー: ' + error.message, 'error'); return; }
+  
+  const prospectId = document.getElementById('activity-prospect').value;
   closeModal('activity-modal');
   loadActivities();
+
+  // 案件に紐づいている場合、ステータス更新を促す
+  if (prospectId && !editId) {
+    setTimeout(() => {
+      if (confirm('案件のステータスを更新しますか？')) {
+        const prospect = prospects.find(p => p.id === prospectId);
+        if (prospect) {
+          editProspect(prospectId);
+        } else {
+          // prospectsが読み込まれていない場合は案件タブへ
+          showPage({ target: document.querySelectorAll('.nav-btn')[1] }, 'prospects');
+          loadProspects().then(() => editProspect(prospectId));
+        }
+      }
+    }, 300);
+  }
 }
 
 // ===== ユーティリティ =====

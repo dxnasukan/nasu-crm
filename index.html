@@ -756,14 +756,13 @@
                 <th>種別</th>
                 <th>得意先</th>
                 <th>案件</th>
-                <th>内容</th>
-                <th>次のアクション</th>
+                <th>内容・次のアクション</th>
                 <th>担当</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="activity-tbody">
-              <tr><td colspan="8" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="7" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1312,10 +1311,19 @@ async function selectCompany(id) {
       </div>
 
       <div id="tab-info">
-        <div class="info-grid">
-          <span class="info-label">担当営業</span><span class="info-value">${esc(company.users?.name || '未設定')}</span>
-          <span class="info-label">KMCコード</span><span class="info-value">${esc(company.kmc_code || '—')}</span>
-          <span class="info-label">備考</span><span class="info-value">${esc(company.notes || '—')}</span>
+        <div class="info-grid-2col" style="margin-bottom:16px">
+          <div class="info-row">
+            <div class="info-cell-label">担当営業</div>
+            <div class="info-cell-value">${esc(company.users?.name || '未設定')}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-cell-label">KMCコード</div>
+            <div class="info-cell-value">${esc(company.kmc_code || '—')}</div>
+          </div>
+          ${company.notes ? `<div class="info-row" style="grid-column:span 2">
+            <div class="info-cell-label">備考</div>
+            <div class="info-cell-value">${esc(company.notes)}</div>
+          </div>` : ''}
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-secondary btn-sm" onclick="editCompany('${company.id}')">編集</button>
@@ -1333,7 +1341,8 @@ async function selectCompany(id) {
                 <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
               </div>
               <div class="prospect-item-meta">
-                ${(p.prospect_categories||[]).map(c=>c.category).join('・') ? `<span style="font-size:11px;color:var(--text-muted)">${(p.prospect_categories||[]).map(c=>c.category).join('・')}</span>` : ''}
+                ${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : ''}
+                ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
                 ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
               </div>
             </div>
@@ -1342,19 +1351,42 @@ async function selectCompany(id) {
       </div>
 
       <div id="tab-timeline" style="display:none">
-        ${(acData||[]).length === 0 ? '<div class="empty"><div class="empty-text">活動履歴がありません</div></div>' :
-          `<div class="timeline">${(acData||[]).map(a => `
-            <div class="timeline-item">
-              <div class="timeline-dot"></div>
-              <div class="timeline-line"></div>
-              <div class="timeline-content">
-                <div class="timeline-date">${esc(a.activity_date)} <span class="timeline-type">${esc(a.activity_type||'')}</span></div>
-                <div class="timeline-summary">${esc(a.summary)}</div>
-                ${a.next_action ? `<div class="timeline-next">→ ${esc(a.next_action)}</div>` : ''}
+        ${(acData||[]).length === 0 ? '<div class="empty"><div class="empty-text">活動履歴がありません</div></div>' : `
+          ${acData.slice(0,3).map(a => `
+            <div class="activity-card">
+              <div class="activity-card-header">
+                <span class="activity-card-date">${esc(a.activity_date)}</span>
+                <div style="display:flex;gap:6px;align-items:center">
+                  ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
+                  <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>
+                </div>
               </div>
+              <div class="activity-card-summary">${esc(a.summary)}</div>
+              ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
             </div>
-          `).join('')}</div>`
-        }
+          `).join('')}
+          ${acData.length > 3 ? `
+            <div id="tab-timeline-more" style="display:none">
+              ${acData.slice(3).map(a => `
+                <div class="activity-card">
+                  <div class="activity-card-header">
+                    <span class="activity-card-date">${esc(a.activity_date)}</span>
+                    <div style="display:flex;gap:6px;align-items:center">
+                      ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
+                      <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>
+                    </div>
+                  </div>
+                  <div class="activity-card-summary">${esc(a.summary)}</div>
+                  ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+            <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:4px"
+              onclick="const m=document.getElementById('tab-timeline-more');const b=this;if(m.style.display==='none'){m.style.display='';b.textContent='折りたたむ'}else{m.style.display='none';b.textContent='さらに${acData.length - 3}件を表示'}">
+              さらに${acData.length - 3}件を表示
+            </button>
+          ` : ''}
+        `}
       </div>
     </div>
   `;
@@ -1552,7 +1584,10 @@ async function selectProspect(id) {
             <div class="activity-card">
               <div class="activity-card-header">
                 <span class="activity-card-date">${esc(a.activity_date)}</span>
-                ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
+                <div style="display:flex;gap:6px;align-items:center">
+                  ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
+                  <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>
+                </div>
               </div>
               <div class="activity-card-summary">${esc(a.summary)}</div>
               ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
@@ -1777,18 +1812,20 @@ function renderActivities() {
 
   const tbody = document.getElementById('activity-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="empty-text">活動履歴がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="empty-text">活動履歴がありません</div></td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map(a => `
     <tr>
-      <td style="white-space:nowrap">${esc(a.activity_date||'')}</td>
-      <td><span class="badge" style="background:var(--bg);color:var(--text-muted)">${esc(a.activity_type||'')}</span></td>
-      <td><span class="link-jump" onclick="jumpToCompany('${a.company_id}')">${esc(a.companies?.name||'—')}</span></td>
+      <td style="white-space:nowrap;font-size:12px">${esc(a.activity_date||'')}</td>
+      <td><span class="badge" style="background:var(--bg);color:var(--text-muted);white-space:nowrap">${esc(a.activity_type||'')}</span></td>
+      <td style="font-size:12px"><span class="link-jump" onclick="jumpToCompany('${a.company_id}')">${esc(a.companies?.name||'—')}</span></td>
       <td style="font-size:12px">${a.prospect_id ? `<span class="link-jump" onclick="jumpToProspect('${a.prospect_id}')">${esc(a.prospects?.title||'—')}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.summary||'')}</td>
-      <td style="color:var(--accent);font-size:12px">${esc(a.next_action||'—')}</td>
+      <td style="font-size:13px">
+        <div>${esc(a.summary||'')}</div>
+        ${a.next_action ? `<div style="font-size:12px;color:var(--accent);margin-top:2px">→ ${esc(a.next_action)}</div>` : ''}
+      </td>
       <td style="color:var(--text-muted);font-size:12px">${esc(a.users?.name || '—')}</td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>

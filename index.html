@@ -963,8 +963,6 @@
           </div>
         </div>
         <div>
-        </div>
-        <div>
           <div class="form-group">
             <label class="form-label">新規/保持</label>
             <select class="form-control" id="prospect-type">
@@ -1285,7 +1283,7 @@ async function selectCompany(id) {
                 <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
               </div>
               <div class="prospect-item-meta">
-                ${p.category ? `<span style="font-size:11px;color:var(--text-muted)">${esc(p.category)}</span>` : ''}
+                ${(p.prospect_categories||[]).map(c=>c.category).join('・') ? `<span style="font-size:11px;color:var(--text-muted)">${(p.prospect_categories||[]).map(c=>c.category).join('・')}</span>` : ''}
                 ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
               </div>
             </div>
@@ -1381,7 +1379,7 @@ async function saveCompany() {
 
 // ===== 案件 =====
 async function loadProspects() {
-  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department)').order('created_at', { ascending: false });
+  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department), prospect_categories(category)').order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
   prospects = data;
   renderProspects();
@@ -1557,7 +1555,8 @@ function editProspect(id) {
   document.getElementById('prospect-modal-title').textContent = '案件編集';
   document.getElementById('prospect-title').value = p.title || '';
   document.getElementById('prospect-status').value = p.status || 1;
-  document.getElementById('prospect-category').value = p.category || '';
+  const cat = (p.prospect_categories || [])[0]?.category || '';
+  document.getElementById('prospect-category').value = cat;
   document.getElementById('prospect-amount').value = p.expected_amount || '';
   document.getElementById('prospect-date').value = p.expected_date || '';
   document.getElementById('prospect-type').value = p.prospect_type || '';
@@ -1589,7 +1588,6 @@ async function saveProspect() {
     title,
     company_id: companyId,
     status: parseInt(document.getElementById('prospect-status').value),
-    category: document.getElementById('prospect-category').value || null,
     expected_amount: document.getElementById('prospect-amount').value || null,
     expected_date: document.getElementById('prospect-date').value || null,
     assigned_to: document.getElementById('prospect-assigned-to').value || null,
@@ -1637,6 +1635,17 @@ async function saveProspect() {
   }
 
   if (error) { showAlert('prospect-modal-alert', 'エラー: ' + error.message, 'error'); return; }
+
+  // 案件種別をprospect_categoriesに保存
+  const categoryVal = document.getElementById('prospect-category').value;
+  const prospectId = editId || inserted?.id;
+  if (prospectId) {
+    await db.from('prospect_categories').delete().eq('prospect_id', prospectId);
+    if (categoryVal) {
+      await db.from('prospect_categories').insert({ prospect_id: prospectId, category: categoryVal });
+    }
+  }
+
   closeModal('prospect-modal');
   loadProspects();
 }
@@ -2037,7 +2046,8 @@ function filterMeeting() {
   let filtered = meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
     const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
-    const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
+    const pCats = (p.prospect_categories||[]).map(c=>c.category);
+    const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCats.length === 0 : pCats.includes(c));
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
     return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned;
@@ -2095,7 +2105,8 @@ function getFilteredMeetingData() {
   return meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
     const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
-    const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
+    const pCats = (p.prospect_categories||[]).map(c=>c.category);
+    const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCats.length === 0 : pCats.includes(c));
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
     return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned;

@@ -1967,7 +1967,7 @@ async function loadMeeting() {
     ).join('');
   }
 
-  // 確度チェックボックス
+  // 重要度チェックボックス
   const confidenceContainer = document.getElementById('meeting-confidence-cbs');
   if (confidenceContainer) {
     confidenceContainer.innerHTML = ['A','B','C'].map(c =>
@@ -2075,7 +2075,7 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['確度','担当者','得意先','案件名','ステータス','種別','区分','見込み金額','見込み日','備考'];
+  const headers = ['重要度','担当者','得意先','案件名','ステータス','種別','区分','見込み金額','見込み日','備考'];
   const rows = getFilteredMeetingData().map(p => [
     p.importance || '',
     p.users?.name || '',

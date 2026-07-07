@@ -668,6 +668,7 @@
               <option value="民間">民間</option>
               <option value="その他">その他</option>
             </select>
+            <button class="btn btn-secondary" id="company-mine-btn" onclick="toggleMyCompanies()" style="white-space:nowrap">自分の担当</button>
             <button class="btn btn-primary" onclick="openCompanyModal()">＋ 新規登録</button>
           </div>
         </div>
@@ -698,6 +699,7 @@
               <span class="search-icon">🔍</span>
               <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名で検索..." oninput="filterProspects()">
             </div>
+            <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
               <option value="1">情報収集中</option>
@@ -745,6 +747,7 @@
               <option value="メール">メール</option>
               <option value="その他">その他</option>
             </select>
+            <button class="btn btn-secondary" id="activity-mine-btn" onclick="toggleMyActivities()" style="white-space:nowrap">自分の記録</button>
             <button class="btn btn-primary" onclick="openActivityModal()">＋ 記録追加</button>
           </div>
         </div>
@@ -1250,7 +1253,8 @@ function renderCompanies() {
   let filtered = companies.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search);
     const matchSeg = !seg || c.segment === seg;
-    return matchSearch && matchSeg;
+    const matchMine = !showMyCompanies || c.assigned_to === currentUser?.id;
+    return matchSearch && matchSeg && matchMine;
   });
 
   filtered.sort((a, b) => {
@@ -1476,7 +1480,8 @@ function renderProspects() {
   let filtered = prospects.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
-    return matchSearch && matchStatus;
+    const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
+    return matchSearch && matchStatus && matchMine;
   });
 
   const list = document.getElementById('prospect-list');
@@ -1807,7 +1812,8 @@ function renderActivities() {
   let filtered = activities.filter(a => {
     const matchSearch = (a.summary||'').toLowerCase().includes(search) || (a.companies?.name||'').toLowerCase().includes(search);
     const matchType = !type || a.activity_type === type;
-    return matchSearch && matchType;
+    const matchMine = !showMyActivities || a.assigned_to === currentUser?.id;
+    return matchSearch && matchType && matchMine;
   });
 
   const tbody = document.getElementById('activity-tbody');
@@ -1844,7 +1850,9 @@ function openActivityModal() {
   document.getElementById('activity-modal-alert').innerHTML = '';
   document.getElementById('activity-prospect').innerHTML = '<option value="">案件に紐づけない</option>';
   loadCompanySelect('activity-company', null);
-  loadUserSelect('activity-assigned-to', null);
+  loadUserSelect('activity-assigned-to', currentUser?.id);
+  const nameDiv = document.getElementById('activity-assigned-name');
+  if (nameDiv && currentUserProfile) nameDiv.textContent = currentUserProfile.name;
   openModal('activity-modal');
 }
 
@@ -2372,6 +2380,36 @@ function formatTiming(p) {
     return p.timing_year && p.timing_month ? `${p.timing_year}年${p.timing_month}月` : '—';
   }
   return p.timing_label || '—';
+}
+
+
+// ===== 自分の担当フィルター =====
+let showMyCompanies = false;
+let showMyProspects = false;
+let showMyActivities = false;
+
+function toggleMyCompanies() {
+  showMyCompanies = !showMyCompanies;
+  const btn = document.getElementById('company-mine-btn');
+  btn.classList.toggle('btn-primary', showMyCompanies);
+  btn.classList.toggle('btn-secondary', !showMyCompanies);
+  filterCompanies();
+}
+
+function toggleMyProspects() {
+  showMyProspects = !showMyProspects;
+  const btn = document.getElementById('prospect-mine-btn');
+  btn.classList.toggle('btn-primary', showMyProspects);
+  btn.classList.toggle('btn-secondary', !showMyProspects);
+  filterProspects();
+}
+
+function toggleMyActivities() {
+  showMyActivities = !showMyActivities;
+  const btn = document.getElementById('activity-mine-btn');
+  btn.classList.toggle('btn-primary', showMyActivities);
+  btn.classList.toggle('btn-secondary', !showMyActivities);
+  filterActivities();
 }
 
 // ===== 認証管理 =====

@@ -2154,18 +2154,16 @@ async function doLogin() {
   btn.disabled = true;
   btn.textContent = 'ログイン中...';
   alertEl.innerHTML = '';
-  try {
-    const { data, error } = await db.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    currentUser = data.user;
-    await loadUserProfile();
-    showApp();
-    loadCompanies();
-  } catch(e) {
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
     alertEl.innerHTML = '<div class="alert alert-error">メールアドレスまたはパスワードが正しくありません</div>';
     btn.disabled = false;
     btn.textContent = 'ログイン';
+    return;
   }
+  currentUser = data.user;
+  showApp();
+  loadCompanies();
 }
 
 async function doLogout() {

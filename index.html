@@ -357,11 +357,7 @@
   /* Loading */
   .loading { padding: 32px; text-align: center; color: var(--text-faint); }
 
-  .confidence-20 { background: #fee2e2; color: #991b1b; }
-  .confidence-40 { background: #fef3c7; color: #92400e; }
-  .confidence-60 { background: #e0f2fe; color: #0369a1; }
-  .confidence-80 { background: #dcfce7; color: #166534; }
-  .confidence-100 { background: #166534; color: #ffffff; font-weight: 600; }
+
   .company-item {
     padding: 12px 16px;
     border-bottom: 1px solid var(--border);
@@ -534,6 +530,10 @@
     transition: background 0.15s;
   }
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+  .importance-A { background: #fee2e2; color: #991b1b; font-weight: 600; }
+  .importance-B { background: #fef3c7; color: #92400e; }
+  .importance-C { background: #e0f2fe; color: #0369a1; }
 </style>
 </head>
 <body>
@@ -648,14 +648,6 @@
               <span class="search-icon">🔍</span>
               <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名で検索..." oninput="filterProspects()">
             </div>
-            <select class="form-control" id="prospect-priority-filter" onchange="filterProspects()" style="width:auto">
-              <option value="">確度（全て）</option>
-              <option value="20">20％</option>
-              <option value="40">40％</option>
-              <option value="60">60％</option>
-              <option value="80">80％</option>
-              <option value="100">100％</option>
-            </select>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
               <option value="1">情報収集中</option>
@@ -754,7 +746,7 @@
               <div id="meeting-status-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">確度</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">重要度</div>
               <div id="meeting-confidence-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
             </div>
             <div>
@@ -782,21 +774,22 @@
           <table id="meeting-table">
             <thead>
               <tr>
-                <th>確度</th>
-                <th>担当者</th>
+                <th style="width:50px;text-align:center">重要度</th>
                 <th>得意先</th>
+                <th style="width:60px;text-align:center">規模</th>
                 <th>案件名</th>
-                <th>ステータス</th>
-                <th>直近変更</th>
+                <th style="width:70px">区分</th>
                 <th>種別</th>
-                <th>区分</th>
-                <th>見込み金額</th>
-                <th>見込み日</th>
-                <th>備考</th>
+                <th>担当課</th>
+                <th>担当者</th>
+                <th style="width:100px">ステータス</th>
+                <th style="width:140px">直近変更</th>
+                <th style="width:80px">時期</th>
+                <th style="width:100px;text-align:right">見込み額</th>
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="11" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="12" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -963,17 +956,6 @@
           </div>
         </div>
         <div>
-          <div class="form-group">
-            <label class="form-label">確度</label>
-            <select class="form-control" id="prospect-confidence">
-              <option value="">未設定</option>
-              <option value="20">20％：可能性低い</option>
-              <option value="40">40％：可能性あり</option>
-              <option value="60">60％：有望</option>
-              <option value="80">80％：ほぼ確実</option>
-              <option value="100">100％：受注確定</option>
-            </select>
-          </div>
         </div>
         <div>
           <div class="form-group">
@@ -983,6 +965,66 @@
               <option value="リピート">リピート</option>
               <option value="スポット">スポット</option>
             </select>
+          </div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label class="form-label">重要度</label>
+            <select class="form-control" id="prospect-importance">
+              <option value="">未設定</option>
+              <option value="A">A：最重要</option>
+              <option value="B">B：重要</option>
+              <option value="C">C：通常</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label class="form-label">市場規模</label>
+            <select class="form-control" id="prospect-market-size">
+              <option value="">未設定</option>
+              <option value="A">大（1000万超）</option>
+              <option value="B">中（300〜1000万）</option>
+              <option value="C">小（300万未満）</option>
+            </select>
+          </div>
+        </div>
+        <div class="span-2">
+          <div class="form-group">
+            <label class="form-label">導入時期</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="form-control" id="prospect-timing-type" onchange="toggleTimingFields()" style="width:120px;flex-shrink:0">
+                <option value="">未設定</option>
+                <option value="月次">月次</option>
+                <option value="中期">中期</option>
+              </select>
+              <div id="timing-monthly" style="display:none;gap:8px;flex:1">
+                <select class="form-control" id="prospect-timing-year" style="width:100px">
+                  <option value="">年</option>
+                  <option value="2025">2025年</option>
+                  <option value="2026">2026年</option>
+                  <option value="2027">2027年</option>
+                  <option value="2028">2028年</option>
+                </select>
+                <select class="form-control" id="prospect-timing-month">
+                  <option value="">月</option>
+                  <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+                  <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+                  <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+                  <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+                </select>
+              </div>
+              <div id="timing-midterm" style="display:none;flex:1">
+                <select class="form-control" id="prospect-timing-label">
+                  <option value="">選択</option>
+                  <option value="今年度中">今年度中</option>
+                  <option value="来年度">来年度</option>
+                  <option value="2年以内">2年以内</option>
+                  <option value="3年以内">3年以内</option>
+                  <option value="未定">未定</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         <div class="span-2">
@@ -1333,12 +1375,10 @@ function filterProspects() { renderProspects(); }
 function renderProspects() {
   const search = document.getElementById('prospect-search').value.toLowerCase();
   const status = document.getElementById('prospect-status-filter').value;
-  const confidence = document.getElementById('prospect-priority-filter').value;
 
   let filtered = prospects.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
-    const matchConfidence = !confidence || p.confidence == confidence;
     return matchSearch && matchStatus && matchConfidence;
   });
 
@@ -1356,9 +1396,8 @@ function renderProspects() {
       </div>
       <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="color:var(--text-faint)">担当：${esc(p.users?.name || '未設定')}</span></div>
       <div class="prospect-item-meta">
-        ${p.confidence ? `<span class="badge confidence-${p.confidence}">${p.confidence}％</span>` : ''}
+        ${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : ''}
         ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
-        ${p.category ? `<span style="font-size:11px;color:var(--text-muted)">${esc(p.category)}</span>` : ''}
         ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
         ${p.expected_date ? `<span style="font-size:11px;color:var(--text-faint)">${esc(p.expected_date)}</span>` : ''}
       </div>
@@ -1388,15 +1427,17 @@ async function selectProspect(id) {
       <div class="detail-company-name" style="font-size:16px">${esc(p.title)}</div>
       <div class="detail-meta" style="margin-top:6px">
         <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
-        ${p.confidence ? `<span class="badge confidence-${p.confidence}">${p.confidence}％</span>` : ''}
+        ${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : ''}
         ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
-        ${p.category ? `<span class="badge" style="background:var(--bg);color:var(--text-muted)">${esc(p.category)}</span>` : ''}
       </div>
     </div>
     <div class="detail-body">
       <div class="info-grid">
         <span class="info-label">案件担当者</span><span class="info-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `（${p.users.department}）` : ''}</span>
         <span class="info-label">得意先</span><span class="info-value"><span class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span></span>
+        <span class="info-label">重要度</span><span class="info-value">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</span>
+        <span class="info-label">市場規模</span><span class="info-value">${p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '—'}</span>
+        <span class="info-label">導入時期</span><span class="info-value">${formatTiming(p)}</span>
         <span class="info-label">見込み金額</span><span class="info-value amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</span>
         <span class="info-label">受注見込み日</span><span class="info-value">${esc(p.expected_date || '—')}</span>
         <span class="info-label">備考</span><span class="info-value">${esc(p.notes || '—')}</span>
@@ -1466,8 +1507,11 @@ async function openProspectModal() {
   document.getElementById('prospect-category').value = '';
   document.getElementById('prospect-amount').value = '';
   document.getElementById('prospect-date').value = '';
-  document.getElementById('prospect-confidence').value = '';
   document.getElementById('prospect-contract-type').value = '';
+  document.getElementById('prospect-importance').value = '';
+  document.getElementById('prospect-market-size').value = '';
+  document.getElementById('prospect-timing-type').value = '';
+  toggleTimingFields();
   document.getElementById('prospect-notes').value = '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
@@ -1497,8 +1541,17 @@ function editProspect(id) {
   document.getElementById('prospect-category').value = p.category || '';
   document.getElementById('prospect-amount').value = p.expected_amount || '';
   document.getElementById('prospect-date').value = p.expected_date || '';
-  document.getElementById('prospect-confidence').value = p.confidence || '';
   document.getElementById('prospect-contract-type').value = p.contract_type || '';
+  document.getElementById('prospect-importance').value = p.importance || '';
+  document.getElementById('prospect-market-size').value = p.market_size || '';
+  document.getElementById('prospect-timing-type').value = p.timing_type || '';
+  toggleTimingFields();
+  if (p.timing_type === '月次') {
+    if (document.getElementById('prospect-timing-year')) document.getElementById('prospect-timing-year').value = p.timing_year || '';
+    if (document.getElementById('prospect-timing-month')) document.getElementById('prospect-timing-month').value = p.timing_month || '';
+  } else if (p.timing_type === '中期') {
+    if (document.getElementById('prospect-timing-label')) document.getElementById('prospect-timing-label').value = p.timing_label || '';
+  }
   document.getElementById('prospect-notes').value = p.notes || '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', p.company_id);
@@ -1520,8 +1573,13 @@ async function saveProspect() {
     expected_amount: document.getElementById('prospect-amount').value || null,
     expected_date: document.getElementById('prospect-date').value || null,
     assigned_to: document.getElementById('prospect-assigned-to').value || null,
-    confidence: document.getElementById('prospect-confidence').value ? parseInt(document.getElementById('prospect-confidence').value) : null,
     contract_type: document.getElementById('prospect-contract-type').value || null,
+    importance: document.getElementById('prospect-importance').value || null,
+    market_size: document.getElementById('prospect-market-size').value || null,
+    timing_type: document.getElementById('prospect-timing-type').value || null,
+    timing_year: document.getElementById('prospect-timing-year')?.value ? parseInt(document.getElementById('prospect-timing-year').value) : null,
+    timing_month: document.getElementById('prospect-timing-month')?.value ? parseInt(document.getElementById('prospect-timing-month').value) : null,
+    timing_label: document.getElementById('prospect-timing-label')?.value || null,
     notes: document.getElementById('prospect-notes').value.trim() || null,
     updated_at: new Date().toISOString()
   };
@@ -1893,9 +1951,10 @@ function getCheckedValues(className) {
 
 async function loadMeeting() {
   const { data, error } = await db.from('prospects')
-    .select('*, companies(name), users(name), prospect_histories(status_from, status_to, changed_at, users(name))')
+    .select('*, companies(name), users(name, department, section), prospect_histories(status_from, status_to, changed_at, users(name)), prospect_categories(category)')
     .not('status', 'in', '(8,9)')
-    .order('confidence', { ascending: false, nullsFirst: false });
+    .is('deleted_at', null)
+    .order('importance', { ascending: true, nullsFirst: false });
   if (error) { console.error(error); return; }
   meetingProspects = data || [];
 
@@ -1910,11 +1969,11 @@ async function loadMeeting() {
     ).join('');
   }
 
-  // 確度チェックボックス
+  // 重要度チェックボックス
   const confidenceContainer = document.getElementById('meeting-confidence-cbs');
   if (confidenceContainer) {
-    confidenceContainer.innerHTML = [20,40,60,80,100].map(c =>
-      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="${c}" onchange="filterMeeting()" checked> ${c}％</label>`
+    confidenceContainer.innerHTML = ['A','B','C'].map(c =>
+      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="${c}" onchange="filterMeeting()" checked> ${c}</label>`
     ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
@@ -1954,7 +2013,7 @@ function filterMeeting() {
 
   let filtered = meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchConfidence = confidences.length === 0 || confidences.includes(p.confidence?.toString()) || (confidences.includes('none') && !p.confidence);
+    const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
     const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
@@ -1962,9 +2021,10 @@ function filterMeeting() {
   });
 
   filtered.sort((a, b) => {
-    const ca = a.confidence || 0;
-    const cb = b.confidence || 0;
-    if (ca !== cb) return cb - ca;
+    if (a.importance !== b.importance) {
+      const order = {'A':0,'B':1,'C':2};
+      return (order[a.importance] ?? 3) - (order[b.importance] ?? 3);
+    }
     return a.status - b.status;
   });
 
@@ -1974,7 +2034,7 @@ function filterMeeting() {
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -1984,18 +2044,19 @@ function filterMeeting() {
     const latestChangeHtml = latestChange
       ? `<span style="font-size:11px;white-space:nowrap">${esc(latestChange.changed_at?.slice(0,10))}<br><span class="badge status-${latestChange.status_from}" style="font-size:10px">${STATUS_LABELS[latestChange.status_from]}</span>→<span class="badge status-${latestChange.status_to}" style="font-size:10px">${STATUS_LABELS[latestChange.status_to]}</span></span>`
       : '<span style="color:var(--text-faint);font-size:11px">—</span>';
-    return `<tr>
-      <td>${p.confidence ? `<span class="badge confidence-${p.confidence}">${p.confidence}％</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
-      <td style="font-size:12px">${esc(p.users?.name || '未設定')}</td>
+    return `<tr style="font-size:12px">
+      <td style="text-align:center">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</td>
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
+      <td style="text-align:center;color:var(--text-muted)">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</td>
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
+      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
+      <td style="color:var(--text-muted)">${(p.prospect_categories || []).map(c => c.category).join('・') || '—'}</td>
+      <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
+      <td style="color:var(--text-muted)">${esc(p.users?.name || '—')}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
       <td>${latestChangeHtml}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(p.category || '—')}</td>
-      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
+      <td style="color:var(--text-muted)">${formatTiming(p)}</td>
       <td style="text-align:right" class="amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(p.expected_date || '—')}</td>
-      <td style="font-size:12px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.notes || '—')}</td>
     </tr>`;
   }).join('');
 }
@@ -2008,7 +2069,7 @@ function getFilteredMeetingData() {
   const assigneds = getCheckedValues('meeting-assigned-cb');
   return meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchConfidence = confidences.length === 0 || confidences.includes(p.confidence?.toString()) || (confidences.includes('none') && !p.confidence);
+    const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
     const matchCategory = categories.length === 0 || categories.includes(p.category) || (categories.includes('none') && !p.category);
     const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
     const matchAssigned = assigneds.length === 0 || assigneds.includes(p.assigned_to) || (assigneds.includes('none') && !p.assigned_to);
@@ -2017,9 +2078,9 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['確度','担当者','得意先','案件名','ステータス','種別','区分','見込み金額','見込み日','備考'];
+  const headers = ['重要度','得意先','企業規模','案件名','区分','種別','担当課','担当者','ステータス','直近変更','時期','見込み額'];
   const rows = getFilteredMeetingData().map(p => [
-    p.confidence ? p.confidence + '%' : '',
+    p.importance || '',
     p.users?.name || '',
     p.companies?.name || '',
     p.title,
@@ -2108,6 +2169,23 @@ async function jumpToProspect(prospectId) {
 }
 
 
+
+function toggleTimingFields() {
+  const type = document.getElementById('prospect-timing-type').value;
+  const monthly = document.getElementById('timing-monthly');
+  const midterm = document.getElementById('timing-midterm');
+  if (monthly) monthly.style.display = type === '月次' ? 'flex' : 'none';
+  if (midterm) midterm.style.display = type === '中期' ? 'flex' : 'none';
+}
+
+function formatTiming(p) {
+  if (!p.timing_type) return '—';
+  if (p.timing_type === '月次') {
+    return p.timing_year && p.timing_month ? `${p.timing_year}年${p.timing_month}月` : '—';
+  }
+  return p.timing_label || '—';
+}
+
 // ===== 認証管理 =====
 let currentUser = null;
 let currentUserProfile = null;
@@ -2161,7 +2239,12 @@ async function doLogin() {
     btn.textContent = 'ログイン';
     return;
   }
+  // signInWithPasswordが返すsessionを直接使用
   currentUser = data.user;
+  const { data: profile } = await db.from('users').select('*').eq('id', currentUser.id).single();
+  currentUserProfile = profile;
+  const nameEl = document.getElementById('header-username');
+  if (nameEl && profile) nameEl.textContent = profile.name;
   showApp();
   loadCompanies();
 }
@@ -2203,7 +2286,21 @@ const _mainEl = document.querySelector('.main');
 if (_mainEl) _mainEl.style.display = 'none';
 
 // ===== 初期ロード =====
-// 認証後にloadCompaniesを呼ぶ
+// F5リロード時のセッション復元
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    const { data } = await db.from('users').select('*').eq('id', currentUser.id).single();
+    currentUserProfile = data;
+    const nameEl = document.getElementById('header-username');
+    if (nameEl && data) nameEl.textContent = data.name;
+    showApp();
+    loadCompanies();
+  } else {
+    showLoginForm();
+  }
+})();
 </script>
 </body>
 </html>

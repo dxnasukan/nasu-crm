@@ -738,9 +738,9 @@
           </div>
         </div>
 
-        <!-- チェックボックスフィルターパネル -->
+        <!-- フィルターパネル -->
         <div id="meeting-filter-panel" style="display:none;padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+          <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
             <div>
               <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">ステータス</div>
               <div id="meeting-status-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
@@ -754,10 +754,16 @@
               <div id="meeting-category-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">担当者</div>
-              <div id="meeting-assigned-cbs" style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px"></div>
               <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">リピート/スポット</div>
-              <div id="meeting-contract-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+              <div id="meeting-contract-cbs" style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px"></div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">新規/保持</div>
+              <div id="meeting-type-cbs" style="display:flex;flex-direction:column;gap:4px"></div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">担当者検索</div>
+              <input type="text" id="meeting-assigned-search" placeholder="名前で絞り込み..." 
+                style="padding:6px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;width:160px"
+                oninput="filterMeeting()">
             </div>
           </div>
           <div style="margin-top:12px;display:flex;gap:8px">
@@ -771,25 +777,26 @@
           <span id="meeting-total-amount"></span>
         </div>
         <div class="table-wrap">
-          <table id="meeting-table">
+          <table id="meeting-table" style="font-size:12px">
             <thead>
               <tr>
-                <th style="width:50px;text-align:center">重要度</th>
-                <th>得意先</th>
-                <th style="width:60px;text-align:center">規模</th>
-                <th>案件名</th>
-                <th style="width:70px">区分</th>
-                <th>種別</th>
-                <th>担当課</th>
-                <th>担当者</th>
-                <th style="width:100px">ステータス</th>
-                <th style="width:140px">直近変更</th>
-                <th style="width:80px">時期</th>
-                <th style="width:100px;text-align:right">見込み額</th>
+                <th style="width:44px;text-align:center">重要度</th>
+                <th style="min-width:120px">得意先</th>
+                <th style="width:44px;text-align:center">規模</th>
+                <th style="min-width:140px">案件名</th>
+                <th style="width:56px;text-align:center">新規/保持</th>
+                <th style="width:64px;text-align:center">区分</th>
+                <th style="min-width:80px">種別</th>
+                <th style="width:72px">担当課</th>
+                <th style="width:72px">担当者</th>
+                <th style="width:88px;text-align:center">ステータス</th>
+                <th style="width:120px">直近変更</th>
+                <th style="width:72px;text-align:center">時期</th>
+                <th style="width:90px;text-align:right">見込み額</th>
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="12" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="13" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -956,6 +963,16 @@
           </div>
         </div>
         <div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label class="form-label">新規/保持</label>
+            <select class="form-control" id="prospect-type">
+              <option value="">未設定</option>
+              <option value="新規">新規</option>
+              <option value="保持">保持</option>
+            </select>
+          </div>
         </div>
         <div>
           <div class="form-group">
@@ -1435,6 +1452,7 @@ async function selectProspect(id) {
       <div class="info-grid">
         <span class="info-label">案件担当者</span><span class="info-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `（${p.users.department}）` : ''}</span>
         <span class="info-label">得意先</span><span class="info-value"><span class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span></span>
+        <span class="info-label">新規/保持</span><span class="info-value">${esc(p.prospect_type || '—')}</span>
         <span class="info-label">重要度</span><span class="info-value">${p.importance ? `<span class="badge importance-${p.importance}">${p.importance}</span>` : '—'}</span>
         <span class="info-label">市場規模</span><span class="info-value">${p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '—'}</span>
         <span class="info-label">導入時期</span><span class="info-value">${formatTiming(p)}</span>
@@ -1507,6 +1525,7 @@ async function openProspectModal() {
   document.getElementById('prospect-category').value = '';
   document.getElementById('prospect-amount').value = '';
   document.getElementById('prospect-date').value = '';
+  document.getElementById('prospect-type').value = '';
   document.getElementById('prospect-contract-type').value = '';
   document.getElementById('prospect-importance').value = '';
   document.getElementById('prospect-market-size').value = '';
@@ -1541,6 +1560,7 @@ function editProspect(id) {
   document.getElementById('prospect-category').value = p.category || '';
   document.getElementById('prospect-amount').value = p.expected_amount || '';
   document.getElementById('prospect-date').value = p.expected_date || '';
+  document.getElementById('prospect-type').value = p.prospect_type || '';
   document.getElementById('prospect-contract-type').value = p.contract_type || '';
   document.getElementById('prospect-importance').value = p.importance || '';
   document.getElementById('prospect-market-size').value = p.market_size || '';
@@ -1573,6 +1593,7 @@ async function saveProspect() {
     expected_amount: document.getElementById('prospect-amount').value || null,
     expected_date: document.getElementById('prospect-date').value || null,
     assigned_to: document.getElementById('prospect-assigned-to').value || null,
+    prospect_type: document.getElementById('prospect-type').value || null,
     contract_type: document.getElementById('prospect-contract-type').value || null,
     importance: document.getElementById('prospect-importance').value || null,
     market_size: document.getElementById('prospect-market-size').value || null,
@@ -1941,7 +1962,7 @@ document.addEventListener('click', (e) => {
 });
 
 function checkAllMeeting(checked) {
-  document.querySelectorAll('.meeting-status-cb,.meeting-confidence-cb,.meeting-category-cb,.meeting-contract-cb,.meeting-assigned-cb').forEach(cb => cb.checked = checked);
+  document.querySelectorAll('.meeting-status-cb,.meeting-confidence-cb,.meeting-category-cb,.meeting-contract-cb,.meeting-type-cb').forEach(cb => cb.checked = checked);
   filterMeeting();
 }
 
@@ -1986,11 +2007,12 @@ async function loadMeeting() {
   }
 
   // 担当者チェックボックス
-  const assignedContainer = document.getElementById('meeting-assigned-cbs');
-  if (assignedContainer) {
-    assignedContainer.innerHTML = users.map(u =>
-      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-assigned-cb" value="${u.id}" onchange="filterMeeting()" checked> ${esc(u.name)}</label>`
-    ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-assigned-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
+  // 新規/保持チェックボックス
+  const typeContainer = document.getElementById('meeting-type-cbs');
+  if (typeContainer) {
+    typeContainer.innerHTML = ['新規','保持'].map(t =>
+      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-type-cb" value="${t}" onchange="filterMeeting()" checked> ${t}</label>`
+    ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-type-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
   // リピート/スポットチェックボックス
@@ -2009,7 +2031,8 @@ function filterMeeting() {
   const confidences = getCheckedValues('meeting-confidence-cb');
   const categories = getCheckedValues('meeting-category-cb');
   const contracts = getCheckedValues('meeting-contract-cb');
-  const assigneds = getCheckedValues('meeting-assigned-cb');
+  const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
+  const types = getCheckedValues('meeting-type-cb');
 
   let filtered = meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
@@ -2034,7 +2057,7 @@ function filterMeeting() {
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -2049,6 +2072,7 @@ function filterMeeting() {
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
       <td style="text-align:center;color:var(--text-muted)">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</td>
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
+      <td style="color:var(--text-muted);font-size:12px">${esc(p.prospect_type || '—')}</td>
       <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
       <td style="color:var(--text-muted)">${(p.prospect_categories || []).map(c => c.category).join('・') || '—'}</td>
       <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
@@ -2066,7 +2090,8 @@ function getFilteredMeetingData() {
   const confidences = getCheckedValues('meeting-confidence-cb');
   const categories = getCheckedValues('meeting-category-cb');
   const contracts = getCheckedValues('meeting-contract-cb');
-  const assigneds = getCheckedValues('meeting-assigned-cb');
+  const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
+  const types = getCheckedValues('meeting-type-cb');
   return meetingProspects.filter(p => {
     const matchStatus = statuses.length === 0 || statuses.includes(p.status);
     const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
@@ -2078,7 +2103,7 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['重要度','得意先','企業規模','案件名','区分','種別','担当課','担当者','ステータス','直近変更','時期','見込み額'];
+  const headers = ['重要度','得意先','企業規模','案件名','新規/保持','区分','種別','担当課','担当者','ステータス','直近変更','時期','見込み額'];
   const rows = getFilteredMeetingData().map(p => [
     p.importance || '',
     p.users?.name || '',

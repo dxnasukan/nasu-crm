@@ -2359,11 +2359,15 @@ async function doLogin() {
   btn.disabled = true;
   btn.textContent = 'ログイン中...';
   alertEl.innerHTML = '';
-  const { error } = await db.auth.signInWithPassword({ email, password });
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
   if (error) {
     alertEl.innerHTML = '<div class="alert alert-error">メールアドレスまたはパスワードが正しくありません</div>';
     btn.disabled = false;
     btn.textContent = 'ログイン';
+  } else {
+    currentUser = data.user;
+    await loadUserProfile();
+    showApp();
   }
 }
 

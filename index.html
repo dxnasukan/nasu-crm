@@ -1379,7 +1379,7 @@ function renderProspects() {
   let filtered = prospects.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
-    return matchSearch && matchStatus && matchConfidence;
+    return matchSearch && matchStatus;
   });
 
   const list = document.getElementById('prospect-list');

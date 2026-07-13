@@ -408,9 +408,12 @@
   /* ===== スマホ対応 ===== */
   @media (max-width: 768px) {
     .main { padding: 8px; }
-    .header { padding: 0 12px; }
-    .header-title { font-size: 13px; }
-    .nav-btn { padding: 4px 8px; font-size: 12px; }
+    .header { padding: 0 8px; flex-wrap: nowrap; }
+    .header-title { font-size: 12px; white-space: nowrap; }
+    .header-nav { gap: 2px; }
+    .nav-btn { padding: 4px 6px; font-size: 11px; white-space: nowrap; }
+    .header-user-name { display: none; }
+    .logout-btn { padding: 4px 8px; font-size: 11px; white-space: nowrap; }
 
     /* 2ペインをスマホではシングルカラムに */
     .two-pane { flex-direction: column; min-height: unset; }

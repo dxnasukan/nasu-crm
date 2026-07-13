@@ -437,8 +437,10 @@
 
     /* 案件詳細グリッドをスマホでは1列に */
     .info-grid-2col { grid-template-columns: 1fr; }
-    .info-grid-2col .info-row { grid-column: span 1 !important; border-right: none; }
+    .info-grid-2col .info-row { grid-column: span 1 !important; border-right: none; display: flex; }
     .info-grid-2col .info-row:nth-child(odd) { border-right: none; }
+    .info-grid-2col .info-cell-label { min-width: 80px; width: 80px; flex-shrink: 0; }
+    .info-grid-2col .info-cell-value { flex: 1; word-break: break-word; }
 
     /* カードのパディング縮小 */
     .card-header { padding: 12px; flex-wrap: wrap; gap: 8px; }

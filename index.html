@@ -602,12 +602,12 @@
     <div id="password-alert"></div>
     <div class="login-form-group">
       <label class="login-label">新しいパスワード</label>
-      <input type="password" class="login-input" id="new-password" placeholder="8文字以上で入力"
+      <input type="password" class="login-input" id="new-password" placeholder="8文字以上で入力" autocomplete="new-password"
         onkeydown="if(event.key==='Enter')doSetPassword()">
     </div>
     <div class="login-form-group">
       <label class="login-label">パスワード（確認）</label>
-      <input type="password" class="login-input" id="new-password-confirm" placeholder="もう一度入力"
+      <input type="password" class="login-input" id="new-password-confirm" placeholder="もう一度入力" autocomplete="new-password"
         onkeydown="if(event.key==='Enter')doSetPassword()">
     </div>
     <button class="login-btn" id="password-btn" onclick="doSetPassword()">パスワードを設定する</button>

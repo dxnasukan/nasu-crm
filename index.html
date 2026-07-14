@@ -389,12 +389,18 @@
   .prospect-item-meta { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
 
   @media print {
-    .header, #meeting-toolbar, #meeting-summary-bar { display: none !important; }
-    .card { box-shadow: none; border: none; }
-    body { background: white; font-size: 12px; }
-    .badge { border: 1px solid #ccc; }
-    th, td { padding: 6px 8px; }
+    @page { size: A4 landscape; margin: 10mm; }
+    .header, #meeting-toolbar, #meeting-filter-panel, #output-menu { display: none !important; }
+    .main { padding: 0 !important; }
+    .card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+    body { background: white !important; font-size: 10px !important; }
+    .badge { border: 1px solid #ccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th, td { padding: 4px 6px !important; font-size: 10px !important; white-space: nowrap; }
+    table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc !important; }
     .print-header { display: block !important; }
+    #meeting-summary-bar { display: block !important; }
+    a { color: inherit !important; text-decoration: none !important; }
   }
   .print-header {
     display: none;
@@ -2289,22 +2295,21 @@ async function loadMeeting() {
 }
 
 function filterMeeting() {
-  const statuses = getCheckedValues('meeting-status-cb').map(Number);
-  const confidences = getCheckedValues('meeting-confidence-cb');
-  const categories = getCheckedValues('meeting-category-cb');
-  const contracts = getCheckedValues('meeting-contract-cb');
+  const statusSel = document.getElementById('meeting-status-select')?.value || '';
+  const categorySel = document.getElementById('meeting-category-select')?.value || '';
+  const sectionSel = document.getElementById('meeting-section-select')?.value || '';
   const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
-  const types = getCheckedValues('meeting-type-cb');
 
   let filtered = meetingProspects.filter(p => {
-    const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
+    const matchStatus = !statusSel || p.status.toString() === statusSel;
+    const matchImportance = filterState.imp.size === 0 || filterState.imp.has(p.importance);
     const pCats = (p.prospect_categories||[]).map(c=>c.category);
-    const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCats.length === 0 : pCats.includes(c));
-    const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
+    const matchCategory = !categorySel || pCats.includes(categorySel);
+    const matchContract = filterState.contract.size === 0 || filterState.contract.has(p.contract_type);
     const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
-    const matchType = types.length === 0 || types.includes(p.prospect_type) || (types.includes('none') && !p.prospect_type);
-    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned && matchType;
+    const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
+    const matchSection = !sectionSel || p.users?.section === sectionSel;
+    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchSection;
   });
 
   filtered.sort((a, b) => {
@@ -2369,19 +2374,24 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['重要度','得意先','企業規模','案件名','新規/保持','区分','種別','担当課','担当者','ステータス','直近変更','時期','見込み額'];
-  const rows = getFilteredMeetingData().map(p => [
-    p.importance || '',
-    p.users?.name || '',
-    p.companies?.name || '',
-    p.title,
-    STATUS_LABELS[p.status],
-    p.category || '',
-    p.contract_type || '',
-    p.expected_amount || '',
-    p.expected_date || '',
-    p.notes || ''
-  ]);
+  const headers = ['重要度','得意先','企業規模','案件名','新規/保持','区分','種別','担当課','担当者','ステータス','時期','見込み額'];
+  const rows = getFilteredMeetingData().map(p => {
+    const marketSize = p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '';
+    return [
+      p.importance || '',
+      p.companies?.name || '',
+      marketSize,
+      p.title,
+      p.prospect_type || '',
+      p.contract_type || '',
+      (p.prospect_categories||[]).map(c=>c.category).join('・') || '',
+      p.users?.section || '',
+      p.users?.name || '',
+      STATUS_LABELS[p.status] || '',
+      formatTiming(p),
+      p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : ''
+    ];
+  });
   return { headers, rows };
 }
 

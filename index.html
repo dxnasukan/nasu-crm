@@ -709,7 +709,7 @@
               <option value="その他">その他</option>
             </select>
             <button class="btn btn-secondary" id="company-mine-btn" onclick="toggleMyCompanies()" style="white-space:nowrap">自分の担当</button>
-            <button class="btn btn-primary" onclick="openCompanyModal()">＋ 新規登録</button>
+            <button class="btn btn-primary" id="company-add-btn" onclick="openCompanyModal()" style="display:none">＋ 新規登録</button>
           </div>
         </div>
         <div class="two-pane">
@@ -1431,7 +1431,7 @@ async function selectCompany(id) {
           </div>` : ''}
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-secondary btn-sm" onclick="editCompany('${company.id}')">編集</button>
+${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="editCompany('${company.id}')">編集</button>` : ''}
           <button class="btn btn-primary btn-sm" onclick="openActivityModalForCompany('${company.id}')">活動を記録</button>
           <button class="btn btn-primary btn-sm" onclick="openProspectModalForCompany('${company.id}')">案件を追加</button>
         </div>
@@ -1566,7 +1566,7 @@ async function saveCompany() {
 
 // ===== 案件 =====
 async function loadProspects() {
-  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department), prospect_categories(category)').order('created_at', { ascending: false });
+  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department), prospect_categories(category)').is('deleted_at', null).order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
   prospects = data;
   renderProspects();
@@ -2260,11 +2260,7 @@ async function loadMeeting() {
 
   // 重要度チェックボックス
   const confidenceContainer = document.getElementById('meeting-confidence-cbs');
-  if (confidenceContainer) {
-    confidenceContainer.innerHTML = ['A','B','C'].map(c =>
-      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="${c}" onchange="filterMeeting()" checked> ${c}</label>`
-    ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-confidence-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
-  }
+  // 重要度フィルターはボタン方式に変更済み
 
   // 種別チェックボックス
   const categoryContainer = document.getElementById('meeting-category-cbs');
@@ -2581,6 +2577,12 @@ function showApp() {
   if (main) main.style.display = '';
 }
 
+function applyRoleUI() {
+  const isAdmin = currentUserProfile?.role === 'admin';
+  const addBtn = document.getElementById('company-add-btn');
+  if (addBtn) addBtn.style.display = isAdmin ? '' : 'none';
+}
+
 function showLoginForm() {
   document.getElementById('login-screen').classList.add('active');
   document.getElementById('reset-screen').classList.remove('active');
@@ -2621,6 +2623,7 @@ async function doLogin() {
   const nameEl = document.getElementById('header-username');
   if (nameEl && profile) nameEl.textContent = profile.name;
   showApp();
+  applyRoleUI();
   loadCompanies();
 }
 
@@ -2751,6 +2754,7 @@ if (_mainEl) _mainEl.style.display = 'none';
     const nameEl = document.getElementById('header-username');
     if (nameEl && data) nameEl.textContent = data.name;
     showApp();
+    applyRoleUI();
     loadCompanies();
   } else {
     showLoginForm();

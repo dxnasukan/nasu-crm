@@ -2653,6 +2653,13 @@ function showPasswordScreen(type) {
   if (main) main.style.display = 'none';
   const sub = document.getElementById('password-screen-sub');
   if (sub) sub.textContent = type === 'invite' ? 'はじめにパスワードを設定してください' : '新しいパスワードを設定してください';
+  // 入力欄をクリアしてオートコンプリートを防ぐ
+  setTimeout(() => {
+    const p1 = document.getElementById('new-password');
+    const p2 = document.getElementById('new-password-confirm');
+    if (p1) p1.value = '';
+    if (p2) p2.value = '';
+  }, 100);
 }
 
 async function doSetPassword() {

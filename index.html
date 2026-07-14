@@ -435,12 +435,12 @@
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .span-2 { grid-column: span 1; }
 
-    /* 案件詳細グリッドをスマホでは1列に */
-    .info-grid-2col { grid-template-columns: 1fr; }
-    .info-grid-2col .info-row { grid-column: span 1 !important; border-right: none; display: flex; }
+    /* 案件詳細グリッドをスマホでは縦並びに */
+    .info-grid-2col { display: block; border: none; }
+    .info-grid-2col .info-row { display: flex; border: none; border-bottom: 1px solid var(--border); padding: 8px 0; }
     .info-grid-2col .info-row:nth-child(odd) { border-right: none; }
-    .info-grid-2col .info-cell-label { min-width: 80px; width: 80px; flex-shrink: 0; }
-    .info-grid-2col .info-cell-value { flex: 1; word-break: break-word; }
+    .info-grid-2col .info-cell-label { min-width: 80px; width: 80px; flex-shrink: 0; background: none; border: none; color: var(--text-muted); font-size: 12px; padding: 0 8px 0 0; }
+    .info-grid-2col .info-cell-value { flex: 1; word-break: break-word; background: none; border: none; padding: 0; font-size: 13px; }
 
     /* カードのパディング縮小 */
     .card-header { padding: 12px; flex-wrap: wrap; gap: 8px; }

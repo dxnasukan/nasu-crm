@@ -610,11 +610,13 @@
     <div class="login-form-group">
       <label class="login-label">新しいパスワード</label>
       <input type="password" class="login-input" id="new-password" placeholder="8文字以上で入力" autocomplete="new-password"
+        oninput="checkPasswordInput()"
         onkeydown="if(event.key==='Enter')doSetPassword()">
     </div>
     <div class="login-form-group">
       <label class="login-label">パスワード（確認）</label>
       <input type="password" class="login-input" id="new-password-confirm" placeholder="もう一度入力" autocomplete="new-password"
+        oninput="checkPasswordInput()"
         onkeydown="if(event.key==='Enter')doSetPassword()">
     </div>
     <button class="login-btn" id="password-btn" onclick="doSetPassword()">パスワードを設定する</button>
@@ -2644,6 +2646,10 @@ async function doReset() {
 }
 
 
+function checkPasswordInput() {
+  // 入力状態を記録するだけ（見た目は変えない）
+}
+
 function showPasswordScreen(type) {
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('reset-screen').classList.remove('active');
@@ -2653,13 +2659,19 @@ function showPasswordScreen(type) {
   if (main) main.style.display = 'none';
   const sub = document.getElementById('password-screen-sub');
   if (sub) sub.textContent = type === 'invite' ? 'はじめにパスワードを設定してください' : '新しいパスワードを設定してください';
-  // 入力欄をクリアしてオートコンプリートを防ぐ
+  // 入力欄をクリアしてボタンをリセット
   setTimeout(() => {
     const p1 = document.getElementById('new-password');
     const p2 = document.getElementById('new-password-confirm');
     if (p1) p1.value = '';
     if (p2) p2.value = '';
-  }, 100);
+    const btn = document.getElementById('password-btn');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.textContent = 'パスワードを設定する';
+    }
+  }, 200);
 }
 
 async function doSetPassword() {

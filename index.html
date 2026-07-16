@@ -2574,6 +2574,57 @@ function toggleMyActivities() {
   filterActivities();
 }
 
+
+// ===== 活動履歴モーダルの案件インクリメンタルサーチ =====
+let activityProspects = [];
+
+async function loadProspectsForActivity() {
+  const companyId = getSelectedCompanyId('activity-company');
+  activityProspects = [];
+  document.getElementById('activity-prospect-input').value = '';
+  document.getElementById('activity-prospect-id').value = '';
+  const dropdown = document.getElementById('activity-prospect-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  if (!companyId) return;
+  const { data } = await db.from('prospects')
+    .select('id,title,status')
+    .eq('company_id', companyId)
+    .is('deleted_at', null)
+    .order('title');
+  activityProspects = data || [];
+}
+
+function searchProspectsForActivity(query) {
+  const dropdown = document.getElementById('activity-prospect-dropdown');
+  if (!dropdown) return;
+  if (!getSelectedCompanyId('activity-company')) {
+    dropdown.style.display = 'none';
+    return;
+  }
+  const filtered = activityProspects.filter(p =>
+    p.title.toLowerCase().includes((query||'').toLowerCase())
+  );
+  if (filtered.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+  dropdown.innerHTML = filtered.map(p => `
+    <div onclick="selectProspectForActivity('${p.id}','${p.title.replace(/'/g,"\'")}')"
+      style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+      <span class="badge status-${p.status}" style="font-size:10px;margin-right:6px">${STATUS_LABELS[p.status]}</span>
+      ${p.title}
+    </div>
+  `).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectProspectForActivity(id, title) {
+  document.getElementById('activity-prospect-input').value = title;
+  document.getElementById('activity-prospect-id').value = id;
+  document.getElementById('activity-prospect-dropdown').style.display = 'none';
+}
+
 // ===== 認証管理 =====
 let currentUser = null;
 let currentUserProfile = null;

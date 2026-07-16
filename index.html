@@ -1419,7 +1419,7 @@ async function selectCompany(id) {
   }
 
   const { data: prData } = await db.from('prospects').select('*').eq('company_id', id).order('created_at', { ascending: false });
-  const { data: acData } = await db.from('activities').select('*').eq('company_id', id).order('activity_date', { ascending: false });
+  const { data: acData } = await db.from('activities').select('*, users(name)').eq('company_id', id).is('deleted_at', null).order('activity_date', { ascending: false });
 
   const detail = document.getElementById('company-detail');
   detail.innerHTML = `
@@ -1493,6 +1493,7 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
               </div>
               <div class="activity-card-summary">${esc(a.summary)}</div>
               ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
+              ${a.users?.name ? `<div style="font-size:11px;color:var(--text-faint);margin-top:4px">担当：${esc(a.users.name)}</div>` : ''}
             </div>
           `).join('')}
           ${acData.length > 3 ? `
@@ -1726,6 +1727,7 @@ async function selectProspect(id) {
               </div>
               <div class="activity-card-summary">${esc(a.summary)}</div>
               ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
+              ${a.users?.name ? `<div style="font-size:11px;color:var(--text-faint);margin-top:4px">担当：${esc(a.users.name)}</div>` : ''}
             </div>
           `).join('')}
           ${acData.length > 3 ? `
@@ -1738,6 +1740,7 @@ async function selectProspect(id) {
                   </div>
                   <div class="activity-card-summary">${esc(a.summary)}</div>
                   ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
+                  ${a.users?.name ? `<div style="font-size:11px;color:var(--text-faint);margin-top:4px">担当：${esc(a.users.name)}</div>` : ''}
                 </div>
               `).join('')}
             </div>
@@ -2041,7 +2044,7 @@ async function editActivity(id) {
   // activitiesにない場合はDBから取得（案件詳細からの編集対応）
   let a = activities.find(a => a.id === id);
   if (!a) {
-    const { data } = await db.from('activities').select('*').eq('id', id).single();
+    const { data } = await db.from('activities').select('*, users(name)').eq('id', id).single();
     if (!data) return;
     a = data;
   }
@@ -2053,7 +2056,9 @@ async function editActivity(id) {
   document.getElementById('activity-next').value = a.next_action || '';
   document.getElementById('activity-modal-alert').innerHTML = '';
   loadCompanySelect('activity-company', a.company_id);
-  loadUserSelect('activity-assigned-to', a.assigned_to);
+  document.getElementById('activity-assigned-to').value = a.assigned_to || '';
+  const nameDiv = document.getElementById('activity-assigned-name');
+  if (nameDiv) nameDiv.textContent = a.users?.name || '';
   setTimeout(async () => {
     await loadProspectsForActivity();
     if (a.prospect_id) {

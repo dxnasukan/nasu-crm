@@ -613,6 +613,11 @@
       <div class="login-logo-sub" id="password-screen-sub">パスワードを設定してください</div>
     </div>
     <div id="password-alert"></div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--text-muted)">
+      ・8文字以上で設定してください<br>
+      ・英数字を組み合わせることを推奨します<br>
+      ・このリンクの有効期限は24時間です
+    </div>
     <div class="login-form-group">
       <label class="login-label">新しいパスワード</label>
       <input type="password" class="login-input" id="new-password" placeholder="8文字以上で入力" autocomplete="new-password"
@@ -1237,7 +1242,7 @@
         </div>
         <div class="span-2">
           <div class="form-group">
-            <label class="form-label">案件（任意）</label>
+            <label class="form-label">案件 *</label>
             <select class="form-control" id="activity-prospect">
               <option value="">案件に紐づけない</option>
             </select>
@@ -1949,7 +1954,7 @@ function openActivityModal() {
   document.getElementById('activity-summary').value = '';
   document.getElementById('activity-next').value = '';
   document.getElementById('activity-modal-alert').innerHTML = '';
-  document.getElementById('activity-prospect').innerHTML = '<option value="">案件に紐づけない</option>';
+  document.getElementById('activity-prospect').innerHTML = '<option value="">案件を選択してください</option>';
   loadCompanySelect('activity-company', null);
   loadUserSelect('activity-assigned-to', currentUser?.id);
   const nameDiv = document.getElementById('activity-assigned-name');
@@ -2024,6 +2029,8 @@ async function saveActivity() {
   if (!companyId) { showAlert('activity-modal-alert', '得意先を選択してください（候補から選択）', 'error'); return; }
   if (!summary) { showAlert('activity-modal-alert', '内容は必須です', 'error'); return; }
   if (!date) { showAlert('activity-modal-alert', '活動日は必須です', 'error'); return; }
+  const prospectVal = document.getElementById('activity-prospect').value;
+  if (!prospectVal) { showAlert('activity-modal-alert', '案件を選択してください', 'error'); return; }
 
   const data = {
     company_id: companyId,

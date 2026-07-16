@@ -2598,7 +2598,7 @@ function searchUsersForSelect(selectId, query) {
     return;
   }
   dropdown.innerHTML = [
-    '<div onclick="selectUserForSelect('' + selectId + '','','未設定')" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text-muted);border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">未設定</div>',
+    `<div onclick="selectUserForSelect('${selectId}','','未設定')" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text-muted);border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">未設定</div>`,
     ...filtered.map(u => `
       <div onclick="selectUserForSelect('${selectId}','${u.id}','${u.name}')"
         style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"

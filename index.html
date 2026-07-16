@@ -1919,7 +1919,7 @@ async function saveProspect() {
 
 // ===== 活動履歴 =====
 async function loadActivities() {
-  const { data, error } = await db.from('activities').select('*, companies(name), prospects(title), users(name)').order('activity_date', { ascending: false });
+  const { data, error } = await db.from('activities').select('*, companies(name), prospects(title), users(name)').is('deleted_at', null).order('activity_date', { ascending: false });
   if (error) { console.error(error); return; }
   activities = data;
   renderActivities();
@@ -2034,8 +2034,17 @@ async function loadProspectsForActivity() {
 }
 
 async function editActivity(id) {
-  const a = activities.find(a => a.id === id);
-  if (!a) return;
+  // ボタンをリセット
+  const saveBtn = document.querySelector('#activity-modal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
+  
+  // activitiesにない場合はDBから取得（案件詳細からの編集対応）
+  let a = activities.find(a => a.id === id);
+  if (!a) {
+    const { data } = await db.from('activities').select('*').eq('id', id).single();
+    if (!data) return;
+    a = data;
+  }
   document.getElementById('activity-edit-id').value = a.id;
   document.getElementById('activity-modal-title').textContent = '活動記録編集';
   document.getElementById('activity-type').value = a.activity_type || '訪問';
@@ -2660,8 +2669,10 @@ async function deleteProspect(id) {
 }
 
 async function deleteActivity(id) {
-  if (!confirm('この活動履歴を削除しますか？\n削除後は復元できません。')) return;
-  const { error } = await db.from('activities').delete().eq('id', id);
+  if (!confirm('この活動履歴を削除しますか？')) return;
+  const { error } = await db.from('activities')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
   if (error) { alert('削除に失敗しました: ' + error.message); return; }
   loadActivities();
 }

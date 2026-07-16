@@ -1648,7 +1648,7 @@ async function selectProspect(id) {
     document.getElementById('prospect-detail').classList.remove('sp-hidden');
   }
 
-  const { data: acData } = await db.from('activities').select('*').eq('prospect_id', id).order('activity_date', { ascending: false });
+  const { data: acData } = await db.from('activities').select('*, users(name)').eq('prospect_id', id).is('deleted_at', null).order('activity_date', { ascending: false });
   const { data: histData } = await db.from('prospect_histories').select('*, users(name)').eq('prospect_id', id).order('changed_at', { ascending: false });
 
   const detail = document.getElementById('prospect-detail');

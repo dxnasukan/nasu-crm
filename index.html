@@ -2679,9 +2679,9 @@ async function deleteActivity(id) {
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) { alert('削除に失敗しました: ' + error.message); return; }
+  // 案件詳細が開いていれば再描画してから活動履歴一覧を更新
+  if (selectedProspectId) await selectProspect(selectedProspectId);
   loadActivities();
-  // 案件詳細が開いていれば再描画
-  if (selectedProspectId) selectProspect(selectedProspectId);
 }
 
 async function deleteCompany(id) {

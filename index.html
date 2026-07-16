@@ -1562,8 +1562,10 @@ function editCompany(id) {
 }
 
 async function saveCompany() {
+  const saveBtn = document.querySelector('#company-modal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中...'; }
   const name = document.getElementById('company-name').value.trim();
-  if (!name) { showAlert('company-modal-alert', '会社名は必須です', 'error'); return; }
+  if (!name) { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; } showAlert('company-modal-alert', '会社名は必須です', 'error'); return; }
 
   const data = {
     name,
@@ -1842,10 +1844,12 @@ function editProspect(id) {
 }
 
 async function saveProspect() {
+  const saveBtn = document.querySelector('#prospect-modal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中...'; }
   const title = document.getElementById('prospect-title').value.trim();
   const companyId = getSelectedCompanyId('prospect-company');
-  if (!title) { showAlert('prospect-modal-alert', '案件名は必須です', 'error'); return; }
-  if (!companyId) { showAlert('prospect-modal-alert', '得意先を選択してください（候補から選択）', 'error'); return; }
+  if (!title) { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; } showAlert('prospect-modal-alert', '案件名は必須です', 'error'); return; }
+  if (!companyId) { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; } showAlert('prospect-modal-alert', '得意先を選択してください（候補から選択）', 'error'); return; }
 
   const data = {
     title,
@@ -2052,6 +2056,8 @@ async function editActivity(id) {
 }
 
 async function saveActivity() {
+  const saveBtn = document.querySelector('#activity-modal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中...'; }
   const companyId = getSelectedCompanyId('activity-company');
   const summary = document.getElementById('activity-summary').value.trim();
   const date = document.getElementById('activity-date').value;
@@ -2080,9 +2086,9 @@ async function saveActivity() {
     ({ error } = await db.from('activities').insert(data));
   }
 
-  if (error) { showAlert('activity-modal-alert', 'エラー: ' + error.message, 'error'); return; }
+  if (error) { showAlert('activity-modal-alert', 'エラー: ' + error.message, 'error'); if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; } return; }
   
-  const prospectId = document.getElementById('activity-prospect').value;
+  const prospectId = document.getElementById('activity-prospect-id').value;
   closeModal('activity-modal');
   loadActivities();
 

@@ -545,6 +545,8 @@
     transition: background 0.15s;
   }
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
+  .btn-danger { background: var(--danger); color: white; border: none; }
+  .btn-danger:hover { background: #b91c1c; }
 
   .importance-A { background: #fee2e2; color: #991b1b; font-weight: 600; }
   .importance-B { background: #fef3c7; color: #92400e; }
@@ -1456,6 +1458,7 @@ async function selectCompany(id) {
 ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="editCompany('${company.id}')">編集</button>` : ''}
           <button class="btn btn-primary btn-sm" onclick="openActivityModalForCompany('${company.id}')">活動を記録</button>
           <button class="btn btn-primary btn-sm" onclick="openProspectModalForCompany('${company.id}')">案件を追加</button>
+          ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteCompany('${company.id}')">削除</button>` : ''}
         </div>
       </div>
 
@@ -1697,8 +1700,9 @@ async function selectProspect(id) {
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="btn btn-secondary btn-sm" onclick="editProspect('${p.id}')">編集</button>
+        ${(currentUserProfile?.role === 'admin' || p.assigned_to === currentUser?.id) ? `<button class="btn btn-secondary btn-sm" onclick="editProspect('${p.id}')">編集</button>` : ''}
         <button class="btn btn-primary btn-sm" onclick="openActivityModalForProspect('${p.id}','${p.company_id}')">活動を記録</button>
+        ${(currentUserProfile?.role === 'admin' || p.assigned_to === currentUser?.id) ? `<button class="btn btn-danger btn-sm" onclick="deleteProspect('${p.id}')">削除</button>` : ''}
       </div>
 
       <div class="tabs">
@@ -1715,6 +1719,7 @@ async function selectProspect(id) {
                 <div style="display:flex;gap:6px;align-items:center">
                   ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
                   <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>
+                  ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();deleteActivity('${a.id}')">削除</button>` : ''}
                 </div>
               </div>
               <div class="activity-card-summary">${esc(a.summary)}</div>
@@ -1957,7 +1962,8 @@ function renderActivities() {
       </td>
       <td style="color:var(--text-muted);font-size:12px">${esc(a.users?.name || '—')}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>
+        ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>` : ''}
+        ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteActivity('${a.id}')">削除</button>` : ''}
       </td>
     </tr>
   `).join('');
@@ -2633,6 +2639,33 @@ function setSelectedUser(selectId, userId) {
     document.getElementById(selectId + '-user-input').value = user.name;
     document.getElementById(selectId + '-user-id').value = userId;
   }
+}
+
+
+// ===== 削除処理 =====
+async function deleteProspect(id) {
+  if (!confirm('この案件を削除しますか？\n削除後は復元できません。')) return;
+  const { error } = await db.from('prospects')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) { alert('削除に失敗しました: ' + error.message); return; }
+  loadProspects();
+  document.getElementById('prospect-detail').innerHTML = '<div class="empty"><div class="empty-text">案件を選択してください</div></div>';
+}
+
+async function deleteActivity(id) {
+  if (!confirm('この活動履歴を削除しますか？\n削除後は復元できません。')) return;
+  const { error } = await db.from('activities').delete().eq('id', id);
+  if (error) { alert('削除に失敗しました: ' + error.message); return; }
+  loadActivities();
+}
+
+async function deleteCompany(id) {
+  if (!confirm('この得意先を削除しますか？\n関連する案件・活動履歴も影響を受けます。\n削除後は復元できません。')) return;
+  const { error } = await db.from('companies').delete().eq('id', id);
+  if (error) { alert('削除に失敗しました: ' + error.message); return; }
+  loadCompanies();
+  document.getElementById('company-detail').innerHTML = '<div class="empty"><div class="empty-icon">🏢</div><div class="empty-text">得意先を選択してください</div></div>';
 }
 
 // ===== 活動履歴モーダルの案件インクリメンタルサーチ =====

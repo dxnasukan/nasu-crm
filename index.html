@@ -2675,6 +2675,8 @@ async function deleteActivity(id) {
     .eq('id', id);
   if (error) { alert('削除に失敗しました: ' + error.message); return; }
   loadActivities();
+  // 案件詳細が開いていれば再描画
+  if (selectedProspectId) selectProspect(selectedProspectId);
 }
 
 async function deleteCompany(id) {

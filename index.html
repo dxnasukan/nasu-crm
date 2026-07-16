@@ -1874,7 +1874,7 @@ async function saveProspect() {
 
   // 案件種別をprospect_categoriesに保存
   const categoryVal = document.getElementById('prospect-category').value;
-  const prospectId = editId || inserted?.id;
+  const prospectId = editId || (typeof inserted !== "undefined" ? inserted?.id : null);
   if (prospectId) {
     await db.from('prospect_categories').delete().eq('prospect_id', prospectId);
     if (categoryVal) {
@@ -2723,17 +2723,43 @@ async function doSetPassword() {
   }
 }
 
-// URLハッシュから招待・リセットを検出
-(function checkUrlHash() {
+// PKCEフロー：URLパラメータからcodeを検出して処理
+(async function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
   const hash = window.location.hash;
-  if (hash.includes('type=invite') || hash.includes('type=recovery')) {
-    const type = hash.includes('type=invite') ? 'invite' : 'recovery';
-    const params = new URLSearchParams(hash.substring(1));
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    if (accessToken) {
-      db.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' })
-        .then(() => showPasswordScreen(type));
+  const hashParams = new URLSearchParams(hash.substring(1));
+  const type = params.get('type') || hashParams.get('type');
+  const errorCode = params.get('error_code') || hashParams.get('error_code');
+
+  if (errorCode) {
+    showLoginForm();
+    return;
+  }
+
+  if (code) {
+    try {
+      const { data, error } = await db.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      const inviteType = type || 'recovery';
+      showPasswordScreen(inviteType);
+    } catch(e) {
+      console.error('Code exchange error:', e);
+      showLoginForm();
+    }
+    return;
+  }
+
+  // 旧方式のハッシュフローにも対応
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  const hashType = hashParams.get('type');
+  if (accessToken && (hashType === 'invite' || hashType === 'recovery')) {
+    try {
+      await db.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+      showPasswordScreen(hashType);
+    } catch(e) {
+      showLoginForm();
     }
   }
 })();

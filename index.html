@@ -1026,9 +1026,14 @@
         <div class="span-2">
           <div class="form-group">
             <label class="form-label">担当営業</label>
-            <select class="form-control" id="company-assigned-to">
-              <option value="">未設定</option>
-            </select>
+            <div style="position:relative">
+              <input type="text" class="form-control" id="company-assigned-to-user-input"
+                placeholder="名前で検索..." autocomplete="off"
+                oninput="searchUsersForSelect('company-assigned-to', this.value)"
+                onfocus="searchUsersForSelect('company-assigned-to', this.value)">
+              <input type="hidden" id="company-assigned-to-user-id">
+              <div id="company-assigned-to-user-dropdown" style="display:none;position:absolute;z-index:1000;width:100%;max-height:200px;overflow-y:auto;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>
+            </div>
           </div>
         </div>
         <div class="span-2">
@@ -1203,9 +1208,14 @@
         <div class="span-2">
           <div class="form-group">
             <label class="form-label">案件担当者</label>
-            <select class="form-control" id="prospect-assigned-to">
-              <option value="">未設定</option>
-            </select>
+            <div style="position:relative">
+              <input type="text" class="form-control" id="prospect-assigned-to-user-input"
+                placeholder="名前で検索..." autocomplete="off"
+                oninput="searchUsersForSelect('prospect-assigned-to', this.value)"
+                onfocus="searchUsersForSelect('prospect-assigned-to', this.value)">
+              <input type="hidden" id="prospect-assigned-to-user-id">
+              <div id="prospect-assigned-to-user-dropdown" style="display:none;position:absolute;z-index:1000;width:100%;max-height:200px;overflow-y:auto;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>
+            </div>
           </div>
         </div>
         <div class="span-2">
@@ -1527,7 +1537,7 @@ function openCompanyModal() {
   document.getElementById('company-status').value = 'active';
   document.getElementById('company-notes').value = '';
   document.getElementById('company-modal-alert').innerHTML = '';
-  loadUserSelect('company-assigned-to', null);
+  setSelectedUser('company-assigned-to', '');
   openModal('company-modal');
 }
 
@@ -1543,7 +1553,7 @@ function editCompany(id) {
   document.getElementById('company-status').value = c.status || 'active';
   document.getElementById('company-notes').value = c.notes || '';
   document.getElementById('company-modal-alert').innerHTML = '';
-  loadUserSelect('company-assigned-to', c.assigned_to);
+  setSelectedUser('company-assigned-to', c.assigned_to);
   openModal('company-modal');
 }
 
@@ -1557,7 +1567,7 @@ async function saveCompany() {
     industry: document.getElementById('company-industry').value || null,
     kmc_code: document.getElementById('company-kmc-code').value.trim() || null,
     status: document.getElementById('company-status').value,
-    assigned_to: document.getElementById('company-assigned-to').value || null,
+    assigned_to: getSelectedUserId('company-assigned-to') || null,
     notes: document.getElementById('company-notes').value.trim() || null,
     updated_at: new Date().toISOString()
   };
@@ -1780,7 +1790,7 @@ async function openProspectModal() {
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
   // 活動履歴と同じ方式：最初から全員表示
-  await loadUserSelect('prospect-assigned-to', null);
+  setSelectedUser('prospect-assigned-to', '');
   openModal('prospect-modal');
 }
 
@@ -1821,7 +1831,7 @@ function editProspect(id) {
   document.getElementById('prospect-notes').value = p.notes || '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', p.company_id);
-  loadUserSelect('prospect-assigned-to', p.assigned_to);
+  setSelectedUser('prospect-assigned-to', p.assigned_to);
   openModal('prospect-modal');
 }
 
@@ -1837,7 +1847,7 @@ async function saveProspect() {
     status: parseInt(document.getElementById('prospect-status').value),
     expected_amount: document.getElementById('prospect-amount').value || null,
     expected_date: document.getElementById('prospect-date').value || null,
-    assigned_to: document.getElementById('prospect-assigned-to').value || null,
+    assigned_to: getSelectedUserId('prospect-assigned-to') || null,
     prospect_type: document.getElementById('prospect-type').value || null,
     contract_type: document.getElementById('prospect-contract-type').value || null,
     importance: document.getElementById('prospect-importance').value || null,
@@ -1858,7 +1868,7 @@ async function saveProspect() {
     const newStatus = parseInt(document.getElementById('prospect-status').value);
     ({ error } = await db.from('prospects').update(data).eq('id', editId));
     if (!error && oldProspect && oldProspect.status !== newStatus) {
-      const assignedTo = document.getElementById('prospect-assigned-to').value || null;
+      const assignedTo = getSelectedUserId('prospect-assigned-to') || null;
       await db.from('prospect_histories').insert({
         prospect_id: editId,
         changed_by: assignedTo,
@@ -1871,7 +1881,7 @@ async function saveProspect() {
     const { data: inserted, error: insertError } = await db.from('prospects').insert(data).select().single();
     error = insertError;
     if (!error && inserted) {
-      const assignedTo = document.getElementById('prospect-assigned-to').value || null;
+      const assignedTo = getSelectedUserId('prospect-assigned-to') || null;
       await db.from('prospect_histories').insert({
         prospect_id: inserted.id,
         changed_by: assignedTo,
@@ -2215,7 +2225,7 @@ async function presetAssignedFromCompany() {
     const user = users.find(u => u.id === company.assigned_to);
     if (nameEl) nameEl.textContent = user ? user.name : '未設定';
   } else {
-    await loadUserSelect('prospect-assigned-to', null);
+    setSelectedUser('prospect-assigned-to', '');
     if (nameEl) nameEl.textContent = '未設定';
   }
 }
@@ -2574,6 +2584,55 @@ function toggleMyActivities() {
   filterActivities();
 }
 
+
+
+// ===== 担当者インクリメンタルサーチ =====
+function searchUsersForSelect(selectId, query) {
+  const dropdown = document.getElementById(selectId + '-user-dropdown');
+  if (!dropdown) return;
+  const filtered = users.filter(u =>
+    u.name.toLowerCase().includes((query||'').toLowerCase())
+  );
+  if (filtered.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+  dropdown.innerHTML = [
+    '<div onclick="selectUserForSelect('' + selectId + '','','未設定')" style="padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text-muted);border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">未設定</div>',
+    ...filtered.map(u => `
+      <div onclick="selectUserForSelect('${selectId}','${u.id}','${u.name}')"
+        style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+        onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+        ${u.name}${u.section ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">${u.section}</span>` : ''}
+      </div>
+    `)
+  ].join('');
+  dropdown.style.display = 'block';
+}
+
+function selectUserForSelect(selectId, id, name) {
+  document.getElementById(selectId + '-user-input').value = id ? name : '';
+  document.getElementById(selectId + '-user-id').value = id;
+  document.getElementById(selectId + '-user-dropdown').style.display = 'none';
+}
+
+function getSelectedUserId(selectId) {
+  const el = document.getElementById(selectId + '-user-id');
+  return el ? el.value : '';
+}
+
+function setSelectedUser(selectId, userId) {
+  if (!userId) {
+    document.getElementById(selectId + '-user-input').value = '';
+    document.getElementById(selectId + '-user-id').value = '';
+    return;
+  }
+  const user = users.find(u => u.id === userId);
+  if (user) {
+    document.getElementById(selectId + '-user-input').value = user.name;
+    document.getElementById(selectId + '-user-id').value = userId;
+  }
+}
 
 // ===== 活動履歴モーダルの案件インクリメンタルサーチ =====
 let activityProspects = [];

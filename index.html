@@ -1418,7 +1418,7 @@ async function selectCompany(id) {
     document.getElementById('company-detail').classList.remove('sp-hidden');
   }
 
-  const { data: prData } = await db.from('prospects').select('*').eq('company_id', id).order('created_at', { ascending: false });
+  const { data: prData } = await db.from('prospects').select('*, prospect_categories(category)').eq('company_id', id).is('deleted_at', null).order('created_at', { ascending: false });
   const { data: acData } = await db.from('activities').select('*, users(name)').eq('company_id', id).is('deleted_at', null).order('activity_date', { ascending: false });
 
   const detail = document.getElementById('company-detail');
@@ -2022,19 +2022,7 @@ async function openActivityModalForProspect(prospectId, companyId) {
   }
 }
 
-async function loadProspectsForActivity() {
-  const companyId = getSelectedCompanyId('activity-company');
-  const sel = document.getElementById('activity-prospect');
-  sel.innerHTML = '<option value="">案件を選択してください</option>';
-  if (!companyId) return;
-  const { data } = await db.from('prospects').select('id,title').eq('company_id', companyId).order('title');
-  (data||[]).forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.title;
-    sel.appendChild(opt);
-  });
-}
+// loadProspectsForActivityは下部のactivityProspects方式に統合済み
 
 async function editActivity(id) {
   // ボタンをリセット

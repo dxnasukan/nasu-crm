@@ -910,6 +910,14 @@
                 oninput="filterMeeting()">
             </div>
 
+            <!-- 担当部 -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当部</span>
+              <select id="meeting-dept-select" onchange="filterMeeting()" class="form-control" style="width:110px;font-size:13px">
+                <option value="">すべて</option>
+              </select>
+            </div>
+
             <!-- 担当課 -->
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当課</span>
@@ -1532,7 +1540,7 @@ function switchTab(el, tabId) {
   });
 }
 
-function openCompanyModal() {
+async function openCompanyModal() {
   document.getElementById('company-edit-id').value = '';
   document.getElementById('company-modal-title').textContent = '得意先登録';
   document.getElementById('company-name').value = '';
@@ -1542,6 +1550,7 @@ function openCompanyModal() {
   document.getElementById('company-status').value = 'active';
   document.getElementById('company-notes').value = '';
   document.getElementById('company-modal-alert').innerHTML = '';
+  await loadUsers();
   setSelectedUser('company-assigned-to', '');
   openModal('company-modal');
 }
@@ -1801,6 +1810,7 @@ async function openProspectModal() {
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
   // 活動履歴と同じ方式：最初から全員表示
+  await loadUsers();
   setSelectedUser('prospect-assigned-to', '');
   openModal('prospect-modal');
 }
@@ -1819,6 +1829,9 @@ async function openProspectModalForCompany(companyId) {
 function editProspect(id) {
   const p = prospects.find(p => p.id === id);
   if (!p) return;
+  // 保存ボタンをリセット
+  const saveBtn = document.querySelector('#prospect-modal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
   document.getElementById('prospect-edit-id').value = p.id;
   document.getElementById('prospect-modal-title').textContent = '案件編集';
   document.getElementById('prospect-title').value = p.title || '';
@@ -2331,12 +2344,27 @@ async function loadMeeting() {
     ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-contract-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
+  // 担当部・担当課を動的生成
+  const deptSelect = document.getElementById('meeting-dept-select');
+  if (deptSelect) {
+    const depts = [...new Set(meetingProspects.map(p => p.users?.department).filter(Boolean))].sort();
+    deptSelect.innerHTML = '<option value="">すべて</option>' + 
+      depts.map(d => `<option value="${d}">${d}</option>`).join('');
+  }
+  const sectionSelect = document.getElementById('meeting-section-select');
+  if (sectionSelect) {
+    const sections = [...new Set(meetingProspects.map(p => p.users?.section).filter(Boolean))].sort();
+    sectionSelect.innerHTML = '<option value="">すべて</option>' + 
+      sections.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+
   filterMeeting();
 }
 
 function filterMeeting() {
   const statusSel = document.getElementById('meeting-status-select')?.value || '';
   const categorySel = document.getElementById('meeting-category-select')?.value || '';
+  const deptSel = document.getElementById('meeting-dept-select')?.value || '';
   const sectionSel = document.getElementById('meeting-section-select')?.value || '';
   const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
 
@@ -2348,8 +2376,9 @@ function filterMeeting() {
     const matchContract = filterState.contract.size === 0 || filterState.contract.has(p.contract_type);
     const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
+    const matchDept = !deptSel || p.users?.department === deptSel;
     const matchSection = !sectionSel || p.users?.section === sectionSel;
-    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchSection;
+    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchDept && matchSection;
   });
 
   filtered.sort((a, b) => {
@@ -2552,6 +2581,7 @@ function resetMeetingFilters() {
   // ステータス・種別セレクト
   document.getElementById('meeting-status-select').value = '';
   document.getElementById('meeting-category-select').value = '';
+  document.getElementById('meeting-dept-select').value = '';
   document.getElementById('meeting-section-select').value = '';
   // 担当者検索
   document.getElementById('meeting-assigned-search').value = '';

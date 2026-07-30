@@ -1987,8 +1987,8 @@ function renderActivities() {
       <td><span class="badge" style="background:var(--bg);color:var(--text-muted);white-space:nowrap">${esc(a.activity_type||'')}</span></td>
       <td style="font-size:12px"><span class="link-jump" onclick="jumpToCompany('${a.company_id}')">${esc(a.companies?.name||'—')}</span></td>
       <td style="font-size:12px">${a.prospect_id ? `<span class="link-jump" onclick="jumpToProspect('${a.prospect_id}')">${esc(a.prospects?.title||'—')}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
-      <td style="font-size:13px">
-        <div>${esc(a.summary||'')}</div>
+      <td style="font-size:13px;white-space:pre-wrap !important;overflow:visible !important">
+        <div>${escNl(a.summary||'')}</div>
         ${a.next_action ? `<div style="font-size:12px;color:var(--accent);margin-top:2px">→ ${esc(a.next_action)}</div>` : ''}
       </td>
       <td style="color:var(--text-muted);font-size:12px">${esc(a.users?.name || '—')}</td>

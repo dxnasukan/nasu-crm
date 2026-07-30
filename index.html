@@ -80,6 +80,7 @@
   .nav-btn.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
 
   .main { flex: 1; padding: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
+  .main.main-wide { max-width: 1600px; }
 
   /* Cards */
   .card {
@@ -147,6 +148,8 @@
   /* Table */
   .table-wrap { overflow-x: auto; border-radius: 0 0 var(--radius) var(--radius); }
   .table-wrap table th:last-child, .table-wrap table td:last-child { padding-right: 20px; }
+  #meeting-table th, #meeting-table td { padding-left: 10px; padding-right: 10px; }
+  #meeting-table th:last-child, #meeting-table td:last-child { padding-right: 20px; }
   table { width: 100%; border-collapse: collapse; }
   th {
     padding: 10px 16px;
@@ -1363,6 +1366,8 @@ function showPage(pageOrEvent, pageId) {
   const pageEl = document.getElementById('page-' + page);
   if (pageEl) pageEl.classList.add('active');
   if (targetBtn) targetBtn.classList.add('active');
+
+  document.querySelector('.main').classList.toggle('main-wide', page === 'meeting');
 
   if (page === 'companies') loadCompanies();
   if (page === 'prospects') loadProspects();

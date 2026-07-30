@@ -687,7 +687,7 @@
     <div class="header-title">ナスカン案件管理</div>
     <nav class="header-nav">
       <button class="nav-btn" onclick="showPage('companies')">得意先</button>
-      <button class="nav-btn active" onclick="showPage('prospects')">案件</button>
+      <button class="nav-btn" onclick="showPage('prospects')">案件</button>
       <button class="nav-btn" onclick="showPage('activities')">活動履歴</button>
       <button class="nav-btn" onclick="showPage('meeting')">📋 案件会議</button>
     </nav>
@@ -1347,11 +1347,21 @@ let companySortAsc = true;
 let activitySortAsc = false;
 
 // ===== ページ切り替え =====
-function showPage(page) {
+function showPage(pageOrEvent, pageId) {
+  // showPage('prospects') または showPage(event, 'prospects') の両方に対応
+  let page, targetBtn;
+  if (typeof pageOrEvent === 'string') {
+    page = pageOrEvent;
+    targetBtn = event?.target;
+  } else {
+    page = pageId;
+    targetBtn = pageOrEvent?.target;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  event.target.classList.add('active');
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  if (targetBtn) targetBtn.classList.add('active');
 
   if (page === 'companies') loadCompanies();
   if (page === 'prospects') loadProspects();
@@ -2834,7 +2844,9 @@ async function doLogin() {
   showApp();
   applyRoleUI();
   loadCompanies();
-  showPage({target: document.querySelector('.nav-btn.active')}, 'prospects');
+  // デフォルトページを案件に
+  const prospectBtn = document.querySelectorAll('.nav-btn')[1];
+  if (prospectBtn) showPage({target: prospectBtn}, 'prospects');
 }
 
 async function doLogout() {
@@ -2994,6 +3006,8 @@ if (_mainEl) _mainEl.style.display = 'none';
     showApp();
     applyRoleUI();
     loadCompanies();
+    const prospectBtn2 = document.querySelectorAll('.nav-btn')[1];
+    if (prospectBtn2) showPage({target: prospectBtn2}, 'prospects');
   } else {
     showLoginForm();
   }

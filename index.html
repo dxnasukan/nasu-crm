@@ -686,8 +686,8 @@
   <header class="header">
     <div class="header-title">ナスカン案件管理</div>
     <nav class="header-nav">
-      <button class="nav-btn active" onclick="showPage('companies')">得意先</button>
-      <button class="nav-btn" onclick="showPage('prospects')">案件</button>
+      <button class="nav-btn" onclick="showPage('companies')">得意先</button>
+      <button class="nav-btn active" onclick="showPage('prospects')">案件</button>
       <button class="nav-btn" onclick="showPage('activities')">活動履歴</button>
       <button class="nav-btn" onclick="showPage('meeting')">📋 案件会議</button>
     </nav>
@@ -1499,7 +1499,7 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
                   <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>
                 </div>
               </div>
-              <div class="activity-card-summary">${esc(a.summary)}</div>
+              <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
               ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
               ${a.users?.name ? `<div style="font-size:11px;color:var(--text-faint);margin-top:4px">担当：${esc(a.users.name)}</div>` : ''}
             </div>
@@ -1515,7 +1515,7 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
                       <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>
                     </div>
                   </div>
-                  <div class="activity-card-summary">${esc(a.summary)}</div>
+                  <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
                   ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
                 </div>
               `).join('')}
@@ -1712,9 +1712,9 @@ async function selectProspect(id) {
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        ${(currentUserProfile?.role === 'admin' || p.assigned_to === currentUser?.id) ? `<button class="btn btn-secondary btn-sm" onclick="editProspect('${p.id}')">編集</button>` : ''}
+        <button class="btn btn-secondary btn-sm" onclick="editProspect('${p.id}')">編集</button>
         <button class="btn btn-primary btn-sm" onclick="openActivityModalForProspect('${p.id}','${p.company_id}')">活動を記録</button>
-        ${(currentUserProfile?.role === 'admin' || p.assigned_to === currentUser?.id) ? `<button class="btn btn-danger btn-sm" onclick="deleteProspect('${p.id}')">削除</button>` : ''}
+        ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteProspect('${p.id}')">削除</button>` : ''}
       </div>
 
       <div class="tabs">
@@ -1730,11 +1730,11 @@ async function selectProspect(id) {
                 <span class="activity-card-date">${esc(a.activity_date)}</span>
                 <div style="display:flex;gap:6px;align-items:center">
                   ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
-                  <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>
-                  ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();deleteActivity('${a.id}')">削除</button>` : ''}
+                  ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>` : ''}
+                  ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();deleteActivity('${a.id}')">削除</button>` : ''}
                 </div>
               </div>
-              <div class="activity-card-summary">${esc(a.summary)}</div>
+              <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
               ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
               ${a.users?.name ? `<div style="font-size:11px;color:var(--text-faint);margin-top:4px">担当：${esc(a.users.name)}</div>` : ''}
             </div>
@@ -1747,7 +1747,7 @@ async function selectProspect(id) {
                     <span class="activity-card-date">${esc(a.activity_date)}</span>
                     ${a.activity_type ? `<span class="activity-card-type">${esc(a.activity_type)}</span>` : ''}
                   </div>
-                  <div class="activity-card-summary">${esc(a.summary)}</div>
+                  <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
                   ${a.next_action ? `<div class="activity-card-next">→ ${esc(a.next_action)}</div>` : ''}
                   ${a.users?.name ? `<div style="font-size:11px;color:var(--text-faint);margin-top:4px">担当：${esc(a.users.name)}</div>` : ''}
                 </div>
@@ -1930,7 +1930,8 @@ async function saveProspect() {
   }
 
   closeModal('prospect-modal');
-  loadProspects();
+  await loadProspects();
+  if (selectedProspectId) selectProspect(selectedProspectId);
 }
 
 // ===== 活動履歴 =====
@@ -1983,7 +1984,7 @@ function renderActivities() {
       <td style="color:var(--text-muted);font-size:12px">${esc(a.users?.name || '—')}</td>
       <td>
         ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>` : ''}
-        ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteActivity('${a.id}')">削除</button>` : ''}
+        ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteActivity('${a.id}')">削除</button>` : ''}
       </td>
     </tr>
   `).join('');
@@ -2658,7 +2659,8 @@ function searchUsersForSelect(selectId, query) {
 function selectUserForSelect(selectId, id, name) {
   document.getElementById(selectId + '-user-input').value = id ? name : '';
   document.getElementById(selectId + '-user-id').value = id;
-  document.getElementById(selectId + '-user-dropdown').style.display = 'none';
+  const dd = document.getElementById(selectId + '-user-dropdown');
+  if (dd) dd.style.display = 'none';
 }
 
 function getSelectedUserId(selectId) {
@@ -2786,6 +2788,8 @@ function applyRoleUI() {
   const isAdmin = currentUserProfile?.role === 'admin';
   const addBtn = document.getElementById('company-add-btn');
   if (addBtn) addBtn.style.display = isAdmin ? '' : 'none';
+  
+
 }
 
 function showLoginForm() {
@@ -2830,6 +2834,7 @@ async function doLogin() {
   showApp();
   applyRoleUI();
   loadCompanies();
+  showPage({target: document.querySelector('.nav-btn.active')}, 'prospects');
 }
 
 async function doLogout() {

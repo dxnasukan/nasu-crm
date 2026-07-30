@@ -7,16 +7,17 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
-    --bg: #f8fbfc;
+    --bg: #eef4f7;
     --surface: #ffffff;
-    --border: #e4eef2;
+    --border: #dbe7ec;
     --border-strong: #b8d4de;
-    --text: #1a2a30;
+    --text: #16232a;
     --text-muted: #5a7a88;
     --text-faint: #9ab8c4;
     --accent: #3dbdd8;
     --accent-light: #eef9fc;
     --accent-hover: #28a0bc;
+    --link: #1c7f96;
     --danger: #c0392b;
     --danger-light: #fdf0ee;
     --warning: #d4780a;
@@ -25,7 +26,7 @@
     --info-light: #e8f2fa;
     --radius: 8px;
     --radius-sm: 4px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow: 0 1px 4px rgba(20,40,50,0.10);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   }
 
@@ -374,7 +375,7 @@
   .company-item-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .company-item-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-  .link-jump { color: var(--accent); cursor: pointer; }
+  .link-jump { color: var(--link); font-weight: 600; cursor: pointer; }
   .link-jump:hover { text-decoration: underline; }
 
   /* Prospect list item */

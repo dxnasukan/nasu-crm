@@ -2844,9 +2844,14 @@ async function doLogin() {
   showApp();
   applyRoleUI();
   loadCompanies();
-  // デフォルトページを案件に
+  loadProspects();
+  // デフォルトページを案件に（ページ切り替えのみ、データロードはしない）
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const pageEl = document.getElementById('page-prospects');
+  if (pageEl) pageEl.classList.add('active');
   const prospectBtn = document.querySelectorAll('.nav-btn')[1];
-  if (prospectBtn) showPage({target: prospectBtn}, 'prospects');
+  if (prospectBtn) prospectBtn.classList.add('active');
 }
 
 async function doLogout() {
@@ -3006,8 +3011,13 @@ if (_mainEl) _mainEl.style.display = 'none';
     showApp();
     applyRoleUI();
     loadCompanies();
+    loadProspects();
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const pageEl2 = document.getElementById('page-prospects');
+    if (pageEl2) pageEl2.classList.add('active');
     const prospectBtn2 = document.querySelectorAll('.nav-btn')[1];
-    if (prospectBtn2) showPage({target: prospectBtn2}, 'prospects');
+    if (prospectBtn2) prospectBtn2.classList.add('active');
   } else {
     showLoginForm();
   }

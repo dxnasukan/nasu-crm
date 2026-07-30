@@ -2277,6 +2277,10 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function escNl(str) {
+  return esc(str).replace(/\n/g,'<br>');
+}
+
 // ===== 案件会議サマリー =====
 let meetingProspects = [];
 

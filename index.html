@@ -1940,8 +1940,11 @@ async function saveProspect() {
   const categoryVal = document.getElementById('prospect-category').value;
   const prospectId = editId || (typeof inserted !== "undefined" ? inserted?.id : null);
   if (prospectId) {
-    await db.from('prospect_categories').delete().eq('prospect_id', prospectId);
-    if (categoryVal) {
+    const { error: delCatError } = await db.from('prospect_categories').delete().eq('prospect_id', prospectId);
+    if (delCatError) {
+      console.error('種別の削除に失敗しました:', delCatError);
+      showAlert('prospect-modal-alert', '種別の更新中にエラーが発生しました（権限を確認してください）: ' + delCatError.message, 'error');
+    } else if (categoryVal) {
       await db.from('prospect_categories').insert({ prospect_id: prospectId, category: categoryVal });
     }
   }
@@ -2434,7 +2437,7 @@ function filterMeeting() {
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
       <td style="color:var(--text-muted);font-size:12px">${esc(p.prospect_type || '—')}</td>
       <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
-      <td style="color:var(--text-muted)">${(p.prospect_categories || []).map(c => c.category).join('・') || '—'}</td>
+      <td style="color:var(--text-muted)">${[...new Set((p.prospect_categories || []).map(c => c.category))].join('・') || '—'}</td>
       <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
       <td style="color:var(--text-muted)">${esc(p.users?.name || '—')}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
@@ -2475,7 +2478,7 @@ function buildExportRows() {
       p.title,
       p.prospect_type || '',
       p.contract_type || '',
-      (p.prospect_categories||[]).map(c=>c.category).join('・') || '',
+      [...new Set((p.prospect_categories||[]).map(c=>c.category))].join('・') || '',
       p.users?.section || '',
       p.users?.name || '',
       STATUS_LABELS[p.status] || '',

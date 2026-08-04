@@ -703,9 +703,9 @@
   <header class="header">
     <div class="header-title">ナスカン案件管理</div>
     <nav class="header-nav">
-      <button class="nav-btn" onclick="showPage('companies')" id="nav-btn-companies">得意先</button>
       <button class="nav-btn nav-btn-primary" onclick="showPage('prospects')">案件</button>
       <button class="nav-btn nav-btn-primary" onclick="showPage('meeting')">📋 案件会議</button>
+      <button class="nav-btn" onclick="showPage('companies')" id="nav-btn-companies">得意先</button>
     </nav>
     <div class="header-user">
       <span class="header-user-name" id="header-username"></span>
@@ -842,6 +842,7 @@
         <div class="card-header" id="meeting-toolbar">
           <span class="card-title">案件会議サマリー</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-secondary" id="meeting-mine-btn" onclick="toggleMyMeeting()" style="white-space:nowrap">自分の担当</button>
             <button class="btn btn-secondary" onclick="toggleMeetingFilter()">🔽 フィルター</button>
             <div style="position:relative">
               <button class="btn btn-primary" onclick="toggleOutputMenu()">📤 出力 ▾</button>
@@ -1101,6 +1102,12 @@
             <select class="form-control" id="prospect-company" onchange="presetAssignedFromCompany()"></select>
           </div>
         </div>
+        <div class="span-2" id="prospect-tentative-company-group" style="display:none">
+          <div class="form-group">
+            <label class="form-label">仮の得意先名（未登録・噂話段階のみ）</label>
+            <input type="text" class="form-control" id="prospect-tentative-company-name" placeholder="例：〇〇市内の食品工場（社名未確認）">
+          </div>
+        </div>
         <div class="span-2">
           <div style="padding:6px 12px;background:var(--accent-light);border-radius:var(--radius-sm);font-size:13px;color:var(--text-muted);margin-bottom:8px">
             得意先担当：<strong id="prospect-company-assigned-name" style="color:var(--text)">得意先を選択すると表示されます</strong>
@@ -1230,12 +1237,6 @@
                 </select>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="span-2" id="prospect-tentative-company-group" style="display:none">
-          <div class="form-group">
-            <label class="form-label">仮の得意先名（未登録・噂話段階のみ）</label>
-            <input type="text" class="form-control" id="prospect-tentative-company-name" placeholder="例：〇〇市内の食品工場（社名未確認）">
           </div>
         </div>
         <div class="span-2">
@@ -2191,7 +2192,7 @@ async function saveActivity() {
             editProspect(prospectId);
           } else {
             // prospectsが読み込まれていない場合は案件タブへ
-            showPage({ target: document.querySelectorAll('.nav-btn')[1] }, 'prospects');
+            showPage({ target: document.querySelectorAll('.nav-btn')[0] }, 'prospects');
             loadProspects().then(() => editProspect(prospectId));
           }
         }
@@ -2505,7 +2506,8 @@ function filterMeeting() {
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
     const matchDept = !deptSel || p.users?.department === deptSel;
     const matchSection = !sectionSel || p.users?.section === sectionSel;
-    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchDept && matchSection;
+    const matchMine = !showMyMeeting || p.assigned_to === currentUser?.id;
+    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchDept && matchSection && matchMine;
   });
 
   filtered.sort((a, b) => {
@@ -2656,7 +2658,7 @@ async function jumpToCompany(companyId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-companies').classList.add('active');
-  document.querySelectorAll('.nav-btn')[0].classList.add('active');
+  document.querySelectorAll('.nav-btn')[2].classList.add('active');
   await loadCompanies();
   selectCompany(companyId);
 }
@@ -2665,7 +2667,7 @@ async function jumpToProspect(prospectId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-prospects').classList.add('active');
-  document.querySelectorAll('.nav-btn')[1].classList.add('active');
+  document.querySelectorAll('.nav-btn')[0].classList.add('active');
   await loadProspects();
   selectProspect(prospectId);
 }
@@ -2737,6 +2739,7 @@ function resetMeetingFilters() {
 let showMyCompanies = false;
 let showMyProspects = false;
 let showMyActivities = false;
+let showMyMeeting = false;
 
 function toggleMyCompanies() {
   showMyCompanies = !showMyCompanies;
@@ -2760,6 +2763,14 @@ function toggleMyActivities() {
   btn.classList.toggle('btn-primary', showMyActivities);
   btn.classList.toggle('btn-secondary', !showMyActivities);
   filterActivities();
+}
+
+function toggleMyMeeting() {
+  showMyMeeting = !showMyMeeting;
+  const btn = document.getElementById('meeting-mine-btn');
+  btn.classList.toggle('btn-primary', showMyMeeting);
+  btn.classList.toggle('btn-secondary', !showMyMeeting);
+  filterMeeting();
 }
 
 
@@ -2970,7 +2981,7 @@ async function doLogin() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const pageEl = document.getElementById('page-prospects');
   if (pageEl) pageEl.classList.add('active');
-  const prospectBtn = document.querySelectorAll('.nav-btn')[1];
+  const prospectBtn = document.querySelectorAll('.nav-btn')[0];
   if (prospectBtn) prospectBtn.classList.add('active');
   // データ読み込み
   loadCompanies();
@@ -3137,7 +3148,7 @@ if (_mainEl) _mainEl.style.display = 'none';
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const pageEl2 = document.getElementById('page-prospects');
     if (pageEl2) pageEl2.classList.add('active');
-    const prospectBtn2 = document.querySelectorAll('.nav-btn')[1];
+    const prospectBtn2 = document.querySelectorAll('.nav-btn')[0];
     if (prospectBtn2) prospectBtn2.classList.add('active');
     loadCompanies();
     await loadProspects();

@@ -1022,22 +1022,6 @@
         </div>
         <div>
           <div class="form-group">
-            <label class="form-label">業種</label>
-            <select class="form-control" id="company-industry">
-              <option value="">選択してください</option>
-              <option value="製造業">製造業</option>
-              <option value="医療・福祉">医療・福祉</option>
-              <option value="宿泊・観光">宿泊・観光</option>
-              <option value="官公庁・行政">官公庁・行政</option>
-              <option value="建設・設備">建設・設備</option>
-              <option value="ビル管理・施設管理">ビル管理・施設管理</option>
-              <option value="食品・農業">食品・農業</option>
-              <option value="その他">その他</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div class="form-group">
             <label class="form-label">KMCコード</label>
             <input type="text" class="form-control" id="company-kmc-code" placeholder="任意">
           </div>
@@ -1448,7 +1432,6 @@ function renderCompanies() {
       <div class="company-item-name">${esc(c.name)}</div>
       <div class="company-item-meta">
         ${c.segment ? `<span class="badge badge-segment-${c.segment}">${esc(c.segment)}</span>` : ''}
-        ${c.industry ? `<span style="font-size:11px;color:var(--text-muted)">${esc(c.industry)}</span>` : ''}
         ${c.users?.name ? `<span style="font-size:11px;color:var(--text-faint)">担当：${esc(c.users.name)}</span>` : ''}
       </div>
     </div>
@@ -1477,7 +1460,6 @@ async function selectCompany(id) {
       <div class="detail-company-name">${esc(company.name)}</div>
       <div class="detail-meta">
         ${company.segment ? `<span class="badge badge-segment-${company.segment}">${esc(company.segment)}</span>` : ''}
-        ${company.industry ? `<span class="badge" style="background:var(--bg);color:var(--text-muted)">${esc(company.industry)}</span>` : ''}
         <span class="badge ${company.status === 'active' ? 'badge-active' : 'badge-inactive'}">${company.status === 'active' ? '有効' : '無効'}</span>
       </div>
     </div>
@@ -1586,7 +1568,6 @@ async function openCompanyModal() {
   document.getElementById('company-modal-title').textContent = '得意先登録';
   document.getElementById('company-name').value = '';
   document.getElementById('company-segment').value = '';
-  document.getElementById('company-industry').value = '';
   document.getElementById('company-kmc-code').value = '';
   document.getElementById('company-status').value = 'active';
   document.getElementById('company-notes').value = '';
@@ -1603,7 +1584,6 @@ function editCompany(id) {
   document.getElementById('company-modal-title').textContent = '得意先編集';
   document.getElementById('company-name').value = c.name || '';
   document.getElementById('company-segment').value = c.segment || '';
-  document.getElementById('company-industry').value = c.industry || '';
   document.getElementById('company-kmc-code').value = c.kmc_code || '';
   document.getElementById('company-status').value = c.status || 'active';
   document.getElementById('company-notes').value = c.notes || '';
@@ -1622,7 +1602,6 @@ async function saveCompany() {
     const data = {
       name,
       segment: document.getElementById('company-segment').value || null,
-      industry: document.getElementById('company-industry').value || null,
       kmc_code: document.getElementById('company-kmc-code').value.trim() || null,
       status: document.getElementById('company-status').value,
       assigned_to: getSelectedUserId('company-assigned-to') || null,

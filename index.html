@@ -1390,7 +1390,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 // ===== 得意先 =====
 async function loadCompanies() {
-  const { data, error } = await db.from('companies').select('*, users(name)').order('name');
+  const { data, error } = await db.from('companies').select('*, users(name)').order('name').limit(5000);
   if (error) { console.error(error); return; }
   companies = data;
   renderCompanies();
@@ -2209,7 +2209,7 @@ const companySelections = {};
 
 async function loadCompanySelect(selectId, selectedId) {
   if (companies.length === 0) {
-    const { data } = await db.from('companies').select('id,name,assigned_to,status').eq('status','active').order('name');
+    const { data } = await db.from('companies').select('id,name,assigned_to,status').eq('status','active').order('name').limit(5000);
     companies = data || [];
   }
 

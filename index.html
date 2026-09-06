@@ -336,8 +336,8 @@
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
   /* Two-pane layout */
   .two-pane { display: flex; gap: 0; min-height: 500px; align-items: stretch; }
-  .pane-list { flex: 0 0 400px; width: 400px; min-width: 400px; max-width: 400px; border-right: 1px solid var(--border); overflow: hidden; }
-  .pane-list .table-wrap { overflow-x: hidden; overflow-y: auto; max-height: 600px; }
+  .pane-list { flex: 0 0 400px; width: 400px; min-width: 400px; max-width: 400px; border-right: 1px solid var(--border); overflow-y: auto; max-height: 600px; }
+  .pane-list .table-wrap { overflow-x: hidden; overflow-y: visible; max-height: none; }
   .pane-list table { width: 100%; table-layout: fixed; }
   .pane-list th, .pane-list td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pane-detail { flex: 1; min-width: 0; overflow-y: auto; max-height: 600px; }

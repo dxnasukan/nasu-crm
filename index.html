@@ -106,7 +106,8 @@
     gap: 12px;
   }
 
-  .card-title { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: 0.01em; }
+  .card-title { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: 0.01em; white-space: nowrap; }
+  .card-header > .toolbar { flex: 1; min-width: 0; justify-content: flex-end; }
 
   /* Buttons */
   .btn {
@@ -765,10 +766,9 @@
               <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名で検索..." oninput="filterProspects()">
             </div>
             <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
-            <button class="btn btn-secondary" id="prospect-unassigned-btn" onclick="toggleUnassignedProspects()" style="white-space:nowrap">担当未設定</button>
-            <select class="form-control" id="prospect-dept-filter" onchange="onProspectDeptChange()" style="width:auto"><option value="">部（全て）</option></select>
-            <select class="form-control" id="prospect-section-filter" onchange="filterProspects()" style="width:auto"><option value="">課（全て）</option></select>
             <button class="btn btn-secondary" id="prospect-mysection-btn" onclick="toggleMySection()" style="white-space:nowrap">自分の課</button>
+            <select class="form-control" id="prospect-section-filter" onchange="filterProspects()" style="width:auto;max-width:190px"><option value="">課（全て）</option></select>
+            <button class="btn btn-secondary" id="prospect-unassigned-btn" onclick="toggleUnassignedProspects()" style="white-space:nowrap">担当未設定</button>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
               <option value="1">情報収集中</option>
@@ -1336,7 +1336,6 @@ let meetingAmountSort = null; // null | 'asc' | 'desc'
 let meetingLastSort = null; // null | 'asc'(古い順) | 'desc'(新しい順)
 let prospectAssignedAuto = false; // 案件担当が「得意先の担当営業からの自動セット」のままか
 let showUnassignedProspects = false;
-let prospectDeptSectionMap = {}; // 案件一覧の部→課の対応
 let showUnassignedMeeting = false;
 let companySortKey = 'name';
 let companySortAsc = true;
@@ -1617,98 +1616,85 @@ async function loadProspects() {
   const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department, section), prospect_categories(category)').is('deleted_at', null).order('updated_at', { ascending: false });
   if (error) { console.error(error); return; }
   prospects = data;
-  updateProspectDeptSectionFilters();
+  updateProspectSectionFilter();
   renderProspects();
 }
 
 function filterProspects() { renderProspects(); }
 
-// ===== 案件一覧：部・課の絞り込み =====
-// 選択肢は、案件の担当者の所属から作る（自分の部・課は、案件がなくても必ず選べるようにする）
-function updateProspectDeptSectionFilters() {
-  const deptSel = document.getElementById('prospect-dept-filter');
-  const secSel = document.getElementById('prospect-section-filter');
-  if (!deptSel || !secSel) return;
-  const map = {};
-  prospects.forEach(p => {
-    const d = p.users?.department;
-    const s = p.users?.section;
-    if (!d) return;
-    if (!map[d]) map[d] = new Set();
-    if (s) map[d].add(s);
-  });
+// ===== 案件一覧：課の絞り込み =====
+// 選択肢は「部＋課」の組み合わせ。案件の担当者の所属から作る（自分の課は、案件がなくても必ず選べるようにする）
+// 部長以上は案件会議サマリー（部・課で絞り込める）で見る前提のため、部だけの絞り込みは置かない
+function updateProspectSectionFilter() {
+  const sel = document.getElementById('prospect-section-filter');
+  if (!sel) return;
+  const pairs = new Map(); // key = 部||課
+  const add = (d, s) => { if (d && s) pairs.set(d + '||' + s, { d, s }); };
+  prospects.forEach(p => add(p.users?.department, p.users?.section));
   const me = currentUserProfile;
-  if (me?.department) {
-    if (!map[me.department]) map[me.department] = new Set();
-    if (me.section) map[me.department].add(me.section);
-  }
-  prospectDeptSectionMap = map;
-  const prevDept = deptSel.value;
-  const depts = Object.keys(map).sort((a, b) => a.localeCompare(b, 'ja'));
-  deptSel.innerHTML = '<option value="">部（全て）</option>' + depts.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
-  if (depts.includes(prevDept)) deptSel.value = prevDept;
-  updateProspectSectionOptions();
+  add(me?.department, me?.section);
+  const list = [...pairs.entries()].sort((a, b) => (a[1].d + a[1].s).localeCompare(b[1].d + b[1].s, 'ja'));
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">課（全て）</option>' + list.map(([k, v]) => `<option value="${esc(k)}">${esc(v.d)}　${esc(v.s)}</option>`).join('');
+  if (pairs.has(prev)) sel.value = prev;
   const btn = document.getElementById('prospect-mysection-btn');
-  if (btn) btn.style.display = me?.department ? '' : 'none'; // 部署が未設定の人にはボタンを出さない
+  if (btn) btn.style.display = myProspectSectionKey() ? '' : 'none'; // 課がない人（部長など）にはボタンを出さない
 }
 
-function updateProspectSectionOptions() {
-  const deptSel = document.getElementById('prospect-dept-filter');
-  const secSel = document.getElementById('prospect-section-filter');
-  if (!deptSel || !secSel) return;
-  const dept = deptSel.value;
-  const prev = secSel.value;
-  let sections;
-  if (dept && prospectDeptSectionMap[dept]) {
-    sections = [...prospectDeptSectionMap[dept]];
-  } else {
-    sections = [...new Set(Object.values(prospectDeptSectionMap).flatMap(s => [...s]))];
-  }
-  sections.sort((a, b) => a.localeCompare(b, 'ja'));
-  secSel.innerHTML = '<option value="">課（全て）</option>' + sections.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
-  if (sections.includes(prev)) secSel.value = prev;
-}
-
-function onProspectDeptChange() {
-  updateProspectSectionOptions();
-  filterProspects();
-}
-
-// 自分の部・課で絞り込む（もう一度押すと解除）。課がない人（部長など）は、部だけで絞り込む
-function toggleMySection() {
+function myProspectSectionKey() {
   const me = currentUserProfile;
-  if (!me?.department) return;
-  const deptSel = document.getElementById('prospect-dept-filter');
-  const secSel = document.getElementById('prospect-section-filter');
-  const isMine = deptSel.value === me.department && secSel.value === (me.section || '');
-  deptSel.value = isMine ? '' : me.department;
-  updateProspectSectionOptions();
-  secSel.value = isMine ? '' : (me.section || '');
+  return (me?.department && me?.section) ? me.department + '||' + me.section : '';
+}
+
+// 自分の課で絞り込む（もう一度押すと解除）
+function toggleMySection() {
+  const key = myProspectSectionKey();
+  if (!key) return;
+  const sel = document.getElementById('prospect-section-filter');
+  sel.value = sel.value === key ? '' : key;
   filterProspects();
 }
 
+function clearProspectFilters() {
+  document.getElementById('prospect-search').value = '';
+  document.getElementById('prospect-status-filter').value = '';
+  document.getElementById('prospect-section-filter').value = '';
+  showMyProspects = false;
+  showUnassignedProspects = false;
+  setToggleBtn('prospect-mine-btn', false);
+  setToggleBtn('prospect-unassigned-btn', false);
+  renderProspects();
+}
 
 function renderProspects() {
   const search = document.getElementById('prospect-search').value.toLowerCase();
   const status = document.getElementById('prospect-status-filter').value;
-  const dept = document.getElementById('prospect-dept-filter')?.value || '';
-  const section = document.getElementById('prospect-section-filter')?.value || '';
-  const me = currentUserProfile;
-  setToggleBtn('prospect-mysection-btn', !!me?.department && dept === me.department && section === (me.section || ''));
+  const sectionKey = document.getElementById('prospect-section-filter')?.value || '';
+  const [fDept, fSection] = sectionKey ? sectionKey.split('||') : ['', ''];
+  const myKey = myProspectSectionKey();
+  setToggleBtn('prospect-mysection-btn', !!myKey && sectionKey === myKey);
 
   let filtered = prospects.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
     const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedProspects || !p.assigned_to;
-    const matchDept = !dept || p.users?.department === dept;
-    const matchSection = !section || p.users?.section === section;
-    return matchSearch && matchStatus && matchMine && matchUnassigned && matchDept && matchSection;
+    const matchSection = !sectionKey || (p.users?.department === fDept && p.users?.section === fSection);
+    return matchSearch && matchStatus && matchMine && matchUnassigned && matchSection;
   });
 
   const list = document.getElementById('prospect-list');
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="empty-text">該当する案件がありません</div></div>';
+    // どの条件で絞り込んでいるかを書く（壊れているように見えないように）
+    const conds = [];
+    if (search) conds.push('検索：' + document.getElementById('prospect-search').value);
+    if (status) conds.push('ステータス：' + (STATUS_LABELS[status] || status));
+    if (sectionKey) conds.push('課：' + fDept + '　' + fSection);
+    if (showMyProspects) conds.push('自分の担当');
+    if (showUnassignedProspects) conds.push('担当未設定');
+    list.innerHTML = conds.length
+      ? `<div class="empty"><div class="empty-text">条件に合う案件がありません</div><div style="margin-top:8px;font-size:12px;color:var(--text-muted)">${esc(conds.join(' ／ '))}</div><div style="margin-top:12px"><a class="link-jump" style="font-size:13px" onclick="clearProspectFilters()">絞り込みをすべて解除</a></div></div>`
+      : '<div class="empty"><div class="empty-text">案件がまだ登録されていません</div></div>';
     return;
   }
 

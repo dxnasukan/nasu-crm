@@ -343,8 +343,6 @@
   .pane-detail { flex: 1; min-width: 0; overflow-y: auto; max-height: 600px; }
 
   .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
-  .list-group-header { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; padding: 6px 16px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; color: #3d5865; }
-  .list-group-count { font-weight: 500; color: var(--text-muted); }
 
   /* Empty state */
   .empty {
@@ -768,7 +766,9 @@
             </div>
             <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
             <button class="btn btn-secondary" id="prospect-unassigned-btn" onclick="toggleUnassignedProspects()" style="white-space:nowrap">担当未設定</button>
-            <button class="btn btn-secondary" id="prospect-group-btn" onclick="toggleGroupBySection()" style="white-space:nowrap">課ごとに表示</button>
+            <select class="form-control" id="prospect-dept-filter" onchange="onProspectDeptChange()" style="width:auto"><option value="">部（全て）</option></select>
+            <select class="form-control" id="prospect-section-filter" onchange="filterProspects()" style="width:auto"><option value="">課（全て）</option></select>
+            <button class="btn btn-secondary" id="prospect-mysection-btn" onclick="toggleMySection()" style="white-space:nowrap">自分の課</button>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
               <option value="1">情報収集中</option>
@@ -1323,7 +1323,6 @@ const STATUS_LABELS = {
 const ACTIVITY_TYPE_LABELS = { '訪問': '打合せ', '作業・工事': '作業・工事', '電話': '電話', 'メール': 'メール', 'その他': 'その他' };
 // 「止まっている案件」とみなす日数（案件会議サマリーの最終活動の警告表示）。月2回の会議にするなら15に変更
 const STALE_DAYS = 30;
-const UNASSIGNED_GROUP = '担当未設定';
 
 // ===== State =====
 let companies = [];
@@ -1337,7 +1336,7 @@ let meetingAmountSort = null; // null | 'asc' | 'desc'
 let meetingLastSort = null; // null | 'asc'(古い順) | 'desc'(新しい順)
 let prospectAssignedAuto = false; // 案件担当が「得意先の担当営業からの自動セット」のままか
 let showUnassignedProspects = false;
-let groupProspectsBySection = false;
+let prospectDeptSectionMap = {}; // 案件一覧の部→課の対応
 let showUnassignedMeeting = false;
 let companySortKey = 'name';
 let companySortAsc = true;
@@ -1618,26 +1617,93 @@ async function loadProspects() {
   const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department, section), prospect_categories(category)').is('deleted_at', null).order('updated_at', { ascending: false });
   if (error) { console.error(error); return; }
   prospects = data;
+  updateProspectDeptSectionFilters();
   renderProspects();
 }
 
 function filterProspects() { renderProspects(); }
 
-function sectionGroupLabel(p) {
-  if (!p.users) return UNASSIGNED_GROUP;
-  return [p.users.department, p.users.section].filter(Boolean).join(' ') || '部署未設定';
+// ===== 案件一覧：部・課の絞り込み =====
+// 選択肢は、案件の担当者の所属から作る（自分の部・課は、案件がなくても必ず選べるようにする）
+function updateProspectDeptSectionFilters() {
+  const deptSel = document.getElementById('prospect-dept-filter');
+  const secSel = document.getElementById('prospect-section-filter');
+  if (!deptSel || !secSel) return;
+  const map = {};
+  prospects.forEach(p => {
+    const d = p.users?.department;
+    const s = p.users?.section;
+    if (!d) return;
+    if (!map[d]) map[d] = new Set();
+    if (s) map[d].add(s);
+  });
+  const me = currentUserProfile;
+  if (me?.department) {
+    if (!map[me.department]) map[me.department] = new Set();
+    if (me.section) map[me.department].add(me.section);
+  }
+  prospectDeptSectionMap = map;
+  const prevDept = deptSel.value;
+  const depts = Object.keys(map).sort((a, b) => a.localeCompare(b, 'ja'));
+  deptSel.innerHTML = '<option value="">部（全て）</option>' + depts.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  if (depts.includes(prevDept)) deptSel.value = prevDept;
+  updateProspectSectionOptions();
+  const btn = document.getElementById('prospect-mysection-btn');
+  if (btn) btn.style.display = me?.department ? '' : 'none'; // 部署が未設定の人にはボタンを出さない
 }
+
+function updateProspectSectionOptions() {
+  const deptSel = document.getElementById('prospect-dept-filter');
+  const secSel = document.getElementById('prospect-section-filter');
+  if (!deptSel || !secSel) return;
+  const dept = deptSel.value;
+  const prev = secSel.value;
+  let sections;
+  if (dept && prospectDeptSectionMap[dept]) {
+    sections = [...prospectDeptSectionMap[dept]];
+  } else {
+    sections = [...new Set(Object.values(prospectDeptSectionMap).flatMap(s => [...s]))];
+  }
+  sections.sort((a, b) => a.localeCompare(b, 'ja'));
+  secSel.innerHTML = '<option value="">課（全て）</option>' + sections.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  if (sections.includes(prev)) secSel.value = prev;
+}
+
+function onProspectDeptChange() {
+  updateProspectSectionOptions();
+  filterProspects();
+}
+
+// 自分の部・課で絞り込む（もう一度押すと解除）。課がない人（部長など）は、部だけで絞り込む
+function toggleMySection() {
+  const me = currentUserProfile;
+  if (!me?.department) return;
+  const deptSel = document.getElementById('prospect-dept-filter');
+  const secSel = document.getElementById('prospect-section-filter');
+  const isMine = deptSel.value === me.department && secSel.value === (me.section || '');
+  deptSel.value = isMine ? '' : me.department;
+  updateProspectSectionOptions();
+  secSel.value = isMine ? '' : (me.section || '');
+  filterProspects();
+}
+
 
 function renderProspects() {
   const search = document.getElementById('prospect-search').value.toLowerCase();
   const status = document.getElementById('prospect-status-filter').value;
+  const dept = document.getElementById('prospect-dept-filter')?.value || '';
+  const section = document.getElementById('prospect-section-filter')?.value || '';
+  const me = currentUserProfile;
+  setToggleBtn('prospect-mysection-btn', !!me?.department && dept === me.department && section === (me.section || ''));
 
   let filtered = prospects.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
     const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedProspects || !p.assigned_to;
-    return matchSearch && matchStatus && matchMine && matchUnassigned;
+    const matchDept = !dept || p.users?.department === dept;
+    const matchSection = !section || p.users?.section === section;
+    return matchSearch && matchStatus && matchMine && matchUnassigned && matchDept && matchSection;
   });
 
   const list = document.getElementById('prospect-list');
@@ -1662,26 +1728,7 @@ function renderProspects() {
     </div>
   `;
 
-  if (!groupProspectsBySection) {
-    list.innerHTML = filtered.map(cardHtml).join('');
-    return;
-  }
-
-  // 課ごとにグループ表示（各グループ内は更新順のまま）
-  const groups = {};
-  filtered.forEach(p => {
-    const key = sectionGroupLabel(p);
-    (groups[key] = groups[key] || []).push(p);
-  });
-  const keys = Object.keys(groups).sort((a, b) => {
-    if (a === UNASSIGNED_GROUP) return 1;
-    if (b === UNASSIGNED_GROUP) return -1;
-    return a.localeCompare(b, 'ja');
-  });
-  list.innerHTML = keys.map(k =>
-    `<div class="list-group-header"><span>${esc(k)}</span><span class="list-group-count">${groups[k].length}件</span></div>` +
-    groups[k].map(cardHtml).join('')
-  ).join('');
+  list.innerHTML = filtered.map(cardHtml).join('');
 }
 
 async function selectProspect(id) {
@@ -2325,7 +2372,10 @@ async function presetAssignedFromCompany(opts = {}) {
 }
 
 function showAlert(containerId, msg, type) {
-  document.getElementById(containerId).innerHTML = `<div class="alert alert-${type}">${esc(msg)}</div>`;
+  const el = document.getElementById(containerId);
+  el.innerHTML = `<div class="alert alert-${type}">${esc(msg)}</div>`;
+  // フォームの下の方を入力中でも、メッセージが画面外に隠れないようにする
+  el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 function esc(str) {
@@ -2797,12 +2847,6 @@ function toggleUnassignedProspects() {
   if (showUnassignedProspects) { showMyProspects = false; setToggleBtn('prospect-mine-btn', false); }
   setToggleBtn('prospect-unassigned-btn', showUnassignedProspects);
   filterProspects();
-}
-
-function toggleGroupBySection() {
-  groupProspectsBySection = !groupProspectsBySection;
-  setToggleBtn('prospect-group-btn', groupProspectsBySection);
-  renderProspects();
 }
 
 function toggleMyActivities() {

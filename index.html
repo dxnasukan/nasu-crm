@@ -342,6 +342,10 @@
   .pane-list th, .pane-list td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pane-detail { flex: 1; min-width: 0; overflow-y: auto; max-height: 600px; }
 
+  .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+  .list-group-header { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; padding: 6px 16px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; color: #3d5865; }
+  .list-group-count { font-weight: 500; color: var(--text-muted); }
+
   /* Empty state */
   .empty {
     padding: 48px 24px;
@@ -763,6 +767,8 @@
               <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名で検索..." oninput="filterProspects()">
             </div>
             <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
+            <button class="btn btn-secondary" id="prospect-unassigned-btn" onclick="toggleUnassignedProspects()" style="white-space:nowrap">担当未設定</button>
+            <button class="btn btn-secondary" id="prospect-group-btn" onclick="toggleGroupBySection()" style="white-space:nowrap">課ごとに表示</button>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
               <option value="1">情報収集中</option>
@@ -843,6 +849,7 @@
           <span class="card-title">案件会議サマリー</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <button class="btn btn-secondary" id="meeting-mine-btn" onclick="toggleMyMeeting()" style="white-space:nowrap">自分の担当</button>
+            <button class="btn btn-secondary" id="meeting-unassigned-btn" onclick="toggleUnassignedMeeting()" style="white-space:nowrap">担当未設定</button>
             <button class="btn btn-secondary" onclick="toggleMeetingFilter()">🔽 フィルター</button>
             <div style="position:relative">
               <button class="btn btn-primary" onclick="toggleOutputMenu()">📤 出力 ▾</button>
@@ -895,7 +902,7 @@
 
             <!-- リピート/スポット -->
             <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">区分</span>
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">リピート/スポット</span>
               <div style="display:flex;gap:4px">
                 <button class="filter-toggle-btn" id="contract-btn-リピート" onclick="toggleFilterBtn('contract','リピート')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">リピート</button>
                 <button class="filter-toggle-btn" id="contract-btn-スポット" onclick="toggleFilterBtn('contract','スポット')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">スポット</button>
@@ -922,7 +929,7 @@
 
             <!-- 担当者検索 -->
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当者</span>
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">案件担当</span>
               <input type="text" id="meeting-assigned-search" placeholder="名前で絞り込み..."
                 style="padding:5px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;width:140px"
                 oninput="filterMeeting()">
@@ -968,21 +975,22 @@
               <tr>
                 <th style="width:44px;text-align:center">重要度</th>
                 <th style="min-width:120px">得意先</th>
-                <th style="width:44px;text-align:center">規模</th>
+                <th style="width:44px;text-align:center">市場規模</th>
                 <th style="min-width:140px">案件名</th>
                 <th style="width:56px;text-align:center">新規/保持</th>
-                <th style="width:64px;text-align:center">区分</th>
+                <th style="width:64px;text-align:center;white-space:normal;line-height:1.3">リピート/<br>スポット</th>
                 <th style="min-width:80px">種別</th>
                 <th style="width:72px">担当課</th>
-                <th style="width:72px">担当者</th>
+                <th style="width:72px">案件担当</th>
                 <th style="width:88px;text-align:center">ステータス</th>
+                <th id="meeting-last-th" style="width:84px;cursor:pointer;user-select:none" onclick="toggleMeetingLastSort()" title="クリックで並び替え（古い順→新しい順→解除）">最終活動 <span id="meeting-last-sort-icon" style="font-size:10px">↕</span></th>
                 <th style="width:120px">直近変更</th>
-                <th style="width:72px;text-align:center">時期</th>
+                <th style="width:72px;text-align:center;white-space:normal;line-height:1.3">受注見込み<br>時期</th>
                 <th id="meeting-amount-th" style="width:90px;text-align:right;cursor:pointer;user-select:none" onclick="toggleMeetingAmountSort()">見込み額 <span id="meeting-amount-sort-icon" style="font-size:10px">↕</span></th>
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="13" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="14" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1084,17 +1092,12 @@
           <div class="form-group">
             <label class="form-label">得意先 *</label>
             <select class="form-control" id="prospect-company" onchange="presetAssignedFromCompany()"></select>
-          </div>
-        </div>
-        <div class="span-2" id="prospect-tentative-company-group" style="display:none">
-          <div class="form-group">
-            <label class="form-label">仮の得意先名（未登録・噂話段階のみ）</label>
-            <input type="text" class="form-control" id="prospect-tentative-company-name" placeholder="例：〇〇市内の食品工場（社名未確認）">
+            <div class="form-hint">販売管理に登録されている得意先を選択してください。得意先として確定していない場合（噂話段階など）は「未納入客先」を選び、会社名の目安を案件名に記入してください。</div>
           </div>
         </div>
         <div class="span-2">
           <div style="padding:6px 12px;background:var(--accent-light);border-radius:var(--radius-sm);font-size:13px;color:var(--text-muted);margin-bottom:8px">
-            得意先担当：<strong id="prospect-company-assigned-name" style="color:var(--text)">得意先を選択すると表示されます</strong>
+            得意先の担当営業：<strong id="prospect-company-assigned-name" style="color:var(--text)">得意先を選択すると表示されます</strong>
           </div>
         </div>
         <div>
@@ -1139,8 +1142,18 @@
         </div>
         <div>
           <div class="form-group">
-            <label class="form-label">受注見込み日</label>
-            <input type="date" class="form-control" id="prospect-date">
+            <label class="form-label">受注見込み時期</label>
+            <select class="form-control" id="prospect-timing-label">
+              <option value="">未設定</option>
+              <option value="今月中">今月中</option>
+              <option value="3カ月以内">3カ月以内</option>
+              <option value="今年度中">今年度中</option>
+              <option value="来年度">来年度</option>
+              <option value="2年以内">2年以内</option>
+              <option value="3年以内">3年以内</option>
+              <option value="未定">未定</option>
+            </select>
+            <div class="form-hint">当てはまるものの中で、一番近いものを選択</div>
           </div>
         </div>
         <div>
@@ -1179,53 +1192,16 @@
             <label class="form-label">市場規模</label>
             <select class="form-control" id="prospect-market-size">
               <option value="">未設定</option>
-              <option value="A">大（1000万超）</option>
-              <option value="B">中（300〜1000万）</option>
-              <option value="C">小（300万未満）</option>
+              <option value="A">大</option>
+              <option value="B">中</option>
+              <option value="C">小</option>
             </select>
+            <div class="form-hint">新規はおおよその規模、保持は案件金額（大：1000万超／中：300〜1000万／小：300万未満）で判断</div>
           </div>
         </div>
         <div class="span-2">
           <div class="form-group">
-            <label class="form-label">導入時期</label>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <select class="form-control" id="prospect-timing-type" onchange="toggleTimingFields()" style="width:120px;flex-shrink:0">
-                <option value="">未設定</option>
-                <option value="月次">月次</option>
-                <option value="中期">中期</option>
-              </select>
-              <div id="timing-monthly" style="display:none;gap:8px;flex:1">
-                <select class="form-control" id="prospect-timing-year" style="width:100px">
-                  <option value="">年</option>
-                  <option value="2025">2025年</option>
-                  <option value="2026">2026年</option>
-                  <option value="2027">2027年</option>
-                  <option value="2028">2028年</option>
-                </select>
-                <select class="form-control" id="prospect-timing-month">
-                  <option value="">月</option>
-                  <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
-                  <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
-                  <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
-                  <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-                </select>
-              </div>
-              <div id="timing-midterm" style="display:none;flex:1">
-                <select class="form-control" id="prospect-timing-label">
-                  <option value="">選択</option>
-                  <option value="今年度中">今年度中</option>
-                  <option value="来年度">来年度</option>
-                  <option value="2年以内">2年以内</option>
-                  <option value="3年以内">3年以内</option>
-                  <option value="未定">未定</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="span-2">
-          <div class="form-group">
-            <label class="form-label">案件担当者</label>
+            <label class="form-label">案件担当</label>
             <div style="position:relative">
               <input type="text" class="form-control" id="prospect-assigned-to-user-input"
                 placeholder="名前で検索..." autocomplete="off"
@@ -1345,6 +1321,9 @@ const STATUS_LABELS = {
 };
 // 保存される値(activity_type)はDB互換のため変更せず、表示ラベルだけ「打合せ」に変更
 const ACTIVITY_TYPE_LABELS = { '訪問': '打合せ', '作業・工事': '作業・工事', '電話': '電話', 'メール': 'メール', 'その他': 'その他' };
+// 「止まっている案件」とみなす日数（案件会議サマリーの最終活動の警告表示）。月2回の会議にするなら15に変更
+const STALE_DAYS = 30;
+const UNASSIGNED_GROUP = '担当未設定';
 
 // ===== State =====
 let companies = [];
@@ -1355,6 +1334,11 @@ let selectedCompanyId = null;
 let selectedProspectId = null;
 let meetingDeptSectionMap = {};
 let meetingAmountSort = null; // null | 'asc' | 'desc'
+let meetingLastSort = null; // null | 'asc'(古い順) | 'desc'(新しい順)
+let prospectAssignedAuto = false; // 案件担当が「得意先の担当営業からの自動セット」のままか
+let showUnassignedProspects = false;
+let groupProspectsBySection = false;
+let showUnassignedMeeting = false;
 let companySortKey = 'name';
 let companySortAsc = true;
 let activitySortAsc = false;
@@ -1577,9 +1561,10 @@ async function openCompanyModal() {
   openModal('company-modal');
 }
 
-function editCompany(id) {
+async function editCompany(id) {
   const c = companies.find(c => c.id === id);
   if (!c) return;
+  if (users.length === 0) await loadUsers(); // 担当営業の表示に必要（未読込のまま保存すると担当が空になるのを防ぐ）
   document.getElementById('company-edit-id').value = c.id;
   document.getElementById('company-modal-title').textContent = '得意先編集';
   document.getElementById('company-name').value = c.name || '';
@@ -1630,13 +1615,18 @@ async function saveCompany() {
 
 // ===== 案件 =====
 async function loadProspects() {
-  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department), prospect_categories(category)').is('deleted_at', null).order('updated_at', { ascending: false });
+  const { data, error } = await db.from('prospects').select('*, companies(name), users(name, department, section), prospect_categories(category)').is('deleted_at', null).order('updated_at', { ascending: false });
   if (error) { console.error(error); return; }
   prospects = data;
   renderProspects();
 }
 
 function filterProspects() { renderProspects(); }
+
+function sectionGroupLabel(p) {
+  if (!p.users) return UNASSIGNED_GROUP;
+  return [p.users.department, p.users.section].filter(Boolean).join(' ') || '部署未設定';
+}
 
 function renderProspects() {
   const search = document.getElementById('prospect-search').value.toLowerCase();
@@ -1646,7 +1636,8 @@ function renderProspects() {
     const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
     const matchStatus = !status || p.status == status;
     const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
-    return matchSearch && matchStatus && matchMine;
+    const matchUnassigned = !showUnassignedProspects || !p.assigned_to;
+    return matchSearch && matchStatus && matchMine && matchUnassigned;
   });
 
   const list = document.getElementById('prospect-list');
@@ -1655,21 +1646,42 @@ function renderProspects() {
     return;
   }
 
-  list.innerHTML = filtered.map(p => `
+  const cardHtml = (p) => `
     <div class="prospect-item ${p.id === selectedProspectId ? 'selected' : ''}" onclick="selectProspect('${p.id}')">
       <div class="prospect-item-header">
         <span class="prospect-item-title">${esc(p.title)}</span>
         <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
       </div>
-      <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="color:var(--text-faint)">担当：${esc(p.users?.name || '未設定')}</span></div>
+      <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="${p.users?.name ? 'color:var(--text-faint)' : 'color:var(--danger);font-weight:600'}">担当：${esc(p.users?.name || '未設定')}</span></div>
       <div class="prospect-item-meta">
         ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
         ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
         ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
-        ${p.expected_date ? `<span style="font-size:11px;color:var(--text-faint)">${esc(p.expected_date)}</span>` : ''}
+        ${p.timing_label ? `<span style="font-size:11px;color:var(--text-faint)">${esc(p.timing_label)}</span>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+
+  if (!groupProspectsBySection) {
+    list.innerHTML = filtered.map(cardHtml).join('');
+    return;
+  }
+
+  // 課ごとにグループ表示（各グループ内は更新順のまま）
+  const groups = {};
+  filtered.forEach(p => {
+    const key = sectionGroupLabel(p);
+    (groups[key] = groups[key] || []).push(p);
+  });
+  const keys = Object.keys(groups).sort((a, b) => {
+    if (a === UNASSIGNED_GROUP) return 1;
+    if (b === UNASSIGNED_GROUP) return -1;
+    return a.localeCompare(b, 'ja');
+  });
+  list.innerHTML = keys.map(k =>
+    `<div class="list-group-header"><span>${esc(k)}</span><span class="list-group-count">${groups[k].length}件</span></div>` +
+    groups[k].map(cardHtml).join('')
+  ).join('');
 }
 
 async function selectProspect(id) {
@@ -1686,6 +1698,7 @@ async function selectProspect(id) {
 
   const { data: acData } = await db.from('activities').select('*, users(name)').eq('prospect_id', id).is('deleted_at', null).order('activity_date', { ascending: false });
   const { data: histData } = await db.from('prospect_histories').select('*, users(name)').eq('prospect_id', id).order('changed_at', { ascending: false });
+  if (users.length === 0) await loadUsers();
 
   const detail = document.getElementById('prospect-detail');
   detail.innerHTML = `
@@ -1701,7 +1714,7 @@ async function selectProspect(id) {
     <div class="detail-body">
       <div class="info-grid-2col">
         <div class="info-row">
-          <div class="info-cell-label">担当者</div>
+          <div class="info-cell-label">案件担当</div>
           <div class="info-cell-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `<span style="font-size:11px;color:var(--text-muted)">（${p.users.department}）</span>` : ''}</div>
         </div>
         <div class="info-row">
@@ -1713,29 +1726,25 @@ async function selectProspect(id) {
           <div class="info-cell-value"><span class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span></div>
         </div>
         <div class="info-row">
-          <div class="info-cell-label">受注見込み日</div>
-          <div class="info-cell-value">${esc(p.expected_date || '—')}</div>
-        </div>
-        <div class="info-row">
           <div class="info-cell-label">新規/保持</div>
           <div class="info-cell-value">${esc(p.prospect_type || '—')}</div>
         </div>
         <div class="info-row">
           <div class="info-cell-label">市場規模</div>
-          <div class="info-cell-value">${p.market_size === 'A' ? '大（1000万超）' : p.market_size === 'B' ? '中（300〜1000万）' : p.market_size === 'C' ? '小（300万未満）' : '—'}</div>
+          <div class="info-cell-value">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</div>
         </div>
         <div class="info-row">
           <div class="info-cell-label">重要度</div>
           <div class="info-cell-value">${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : '—'}</div>
         </div>
         <div class="info-row">
-          <div class="info-cell-label">導入時期</div>
+          <div class="info-cell-label">受注見込み時期</div>
           <div class="info-cell-value">${formatTiming(p)}</div>
         </div>
-        ${p.tentative_company_name ? `<div class="info-row" style="grid-column:span 2">
-          <div class="info-cell-label">仮の得意先名</div>
-          <div class="info-cell-value">${esc(p.tentative_company_name)}</div>
-        </div>` : ''}
+        <div class="info-row">
+          <div class="info-cell-label">起票者</div>
+          <div class="info-cell-value">${esc((users.find(u => u.id === p.created_by) || {}).name || '—')}</div>
+        </div>
         ${p.notes ? `<div class="info-row" style="grid-column:span 2">
           <div class="info-cell-label">備考</div>
           <div class="info-cell-value">${esc(p.notes)}</div>
@@ -1830,18 +1839,17 @@ async function openProspectModal() {
   document.getElementById('prospect-status').value = '1';
   document.getElementById('prospect-category').value = '';
   document.getElementById('prospect-amount').value = '';
-  document.getElementById('prospect-date').value = '';
   document.getElementById('prospect-type').value = '';
   document.getElementById('prospect-contract-type').value = '';
   document.getElementById('prospect-importance').value = '';
   document.getElementById('prospect-market-size').value = '';
-  document.getElementById('prospect-timing-type').value = '';
-  toggleTimingFields();
+  document.getElementById('prospect-timing-label').value = '';
   document.getElementById('prospect-notes').value = '';
-  document.getElementById('prospect-tentative-company-name').value = '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
-  updateTentativeCompanyFieldVisibility();
+  prospectAssignedAuto = false;
+  const assignedInfo = document.getElementById('prospect-company-assigned-name');
+  if (assignedInfo) assignedInfo.textContent = '得意先を選択すると表示されます';
   // 活動履歴と同じ方式：最初から全員表示
   await loadUsers();
   setSelectedUser('prospect-assigned-to', '');
@@ -1856,13 +1864,13 @@ async function openProspectModalForCompany(companyId) {
     const input = document.getElementById('prospect-company-input');
     if (input) input.value = company.name;
     await presetAssignedFromCompany();
-    updateTentativeCompanyFieldVisibility();
   }
 }
 
-function editProspect(id) {
+async function editProspect(id) {
   const p = prospects.find(p => p.id === id);
   if (!p) return;
+  if (users.length === 0) await loadUsers(); // 担当者の表示に必要（未読込のまま保存すると担当が空になるのを防ぐ）
   // 保存ボタンをリセット
   const saveBtn = document.querySelector('#prospect-modal .btn-primary');
   if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
@@ -1873,25 +1881,17 @@ function editProspect(id) {
   const cat = (p.prospect_categories || [])[0]?.category || '';
   document.getElementById('prospect-category').value = cat;
   document.getElementById('prospect-amount').value = p.expected_amount || '';
-  document.getElementById('prospect-date').value = p.expected_date || '';
   document.getElementById('prospect-type').value = p.prospect_type || '';
   document.getElementById('prospect-contract-type').value = p.contract_type || '';
   document.getElementById('prospect-importance').value = p.importance || '';
   document.getElementById('prospect-market-size').value = p.market_size || '';
-  document.getElementById('prospect-timing-type').value = p.timing_type || '';
-  toggleTimingFields();
-  if (p.timing_type === '月次') {
-    if (document.getElementById('prospect-timing-year')) document.getElementById('prospect-timing-year').value = p.timing_year || '';
-    if (document.getElementById('prospect-timing-month')) document.getElementById('prospect-timing-month').value = p.timing_month || '';
-  } else if (p.timing_type === '中期') {
-    if (document.getElementById('prospect-timing-label')) document.getElementById('prospect-timing-label').value = p.timing_label || '';
-  }
+  document.getElementById('prospect-timing-label').value = p.timing_label || '';
   document.getElementById('prospect-notes').value = p.notes || '';
-  document.getElementById('prospect-tentative-company-name').value = p.tentative_company_name || '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', p.company_id);
-  updateTentativeCompanyFieldVisibility();
+  prospectAssignedAuto = false;
   setSelectedUser('prospect-assigned-to', p.assigned_to);
+  presetAssignedFromCompany({ fill: false });
   openModal('prospect-modal');
 }
 
@@ -1909,17 +1909,12 @@ async function saveProspect() {
       company_id: companyId,
       status: parseInt(document.getElementById('prospect-status').value),
       expected_amount: document.getElementById('prospect-amount').value || null,
-      expected_date: document.getElementById('prospect-date').value || null,
       assigned_to: getSelectedUserId('prospect-assigned-to') || null,
       prospect_type: document.getElementById('prospect-type').value || null,
       contract_type: document.getElementById('prospect-contract-type').value || null,
       importance: document.getElementById('prospect-importance').value || null,
       market_size: document.getElementById('prospect-market-size').value || null,
-      timing_type: document.getElementById('prospect-timing-type').value || null,
-      timing_year: document.getElementById('prospect-timing-year')?.value ? parseInt(document.getElementById('prospect-timing-year').value) : null,
-      timing_month: document.getElementById('prospect-timing-month')?.value ? parseInt(document.getElementById('prospect-timing-month').value) : null,
-      timing_label: document.getElementById('prospect-timing-label')?.value || null,
-      tentative_company_name: document.getElementById('prospect-tentative-company-name').value.trim() || null,
+      timing_label: document.getElementById('prospect-timing-label').value || null,
       notes: document.getElementById('prospect-notes').value.trim() || null,
       updated_at: new Date().toISOString()
     };
@@ -2107,7 +2102,7 @@ async function editActivity(id) {
   document.getElementById('activity-next').value = a.next_action || '';
   document.getElementById('activity-modal-alert').innerHTML = '';
   loadCompanySelect('activity-company', a.company_id);
-  document.getElementById('activity-assigned-to').value = a.assigned_to || '';
+  await loadUserSelect('activity-assigned-to', a.assigned_to);
   const nameDiv = document.getElementById('activity-assigned-name');
   if (nameDiv) nameDiv.textContent = a.users?.name || '';
   setTimeout(async () => {
@@ -2140,7 +2135,7 @@ async function saveActivity() {
       activity_date: date,
       summary,
       next_action: document.getElementById('activity-next').value.trim() || null,
-      assigned_to: document.getElementById('activity-assigned-to').value || null,
+      assigned_to: document.getElementById('activity-assigned-to').value || (document.getElementById('activity-edit-id').value ? null : (currentUser?.id || null)),
       updated_at: new Date().toISOString()
     };
 
@@ -2289,20 +2284,14 @@ function selectCompanyOption(selectId, id, name) {
   if (input) input.value = name;
   const dropdown = document.getElementById(selectId + '-dropdown');
   if (dropdown) dropdown.style.display = 'none';
-  if (selectId === 'prospect-company') { presetAssignedFromCompany(); updateTentativeCompanyFieldVisibility(); }
+  if (selectId === 'prospect-company') { presetAssignedFromCompany(); }
   if (selectId === 'activity-company') loadProspectsForActivity();
 }
 
-// 得意先として「未納入客先」を選んだ時だけ、仮の会社名サブ項目を表示する
-function updateTentativeCompanyFieldVisibility() {
-  const group = document.getElementById('prospect-tentative-company-group');
-  if (!group) return;
-  const isUnregistered = companySelections['prospect-company']?.name === '未納入客先';
-  group.style.display = isUnregistered ? '' : 'none';
-  if (!isUnregistered) document.getElementById('prospect-tentative-company-name').value = '';
-}
-
-async function presetAssignedFromCompany() {
+// 得意先を選んだとき：得意先の担当営業を表示し、案件担当が「空欄」または「前回の自動セットのまま」なら初期値として入れる。
+// 手動で選んだ案件担当や、既存案件の案件担当は上書きしない。（opts.fill=false：表示だけ更新）
+async function presetAssignedFromCompany(opts = {}) {
+  const fill = opts.fill !== false;
   const companyId = getSelectedCompanyId('prospect-company');
   const nameEl = document.getElementById('prospect-company-assigned-name');
 
@@ -2316,15 +2305,22 @@ async function presetAssignedFromCompany() {
     const { data } = await db.from('companies').select('id,name,assigned_to').eq('id', companyId).single();
     company = data;
   }
+  if (users.length === 0) await loadUsers();
 
-  if (company?.assigned_to) {
-    await loadUserSelect('prospect-assigned-to', company.assigned_to);
-    await loadUsers();
-    const user = users.find(u => u.id === company.assigned_to);
-    if (nameEl) nameEl.textContent = user ? user.name : '未設定';
-  } else {
-    setSelectedUser('prospect-assigned-to', '');
-    if (nameEl) nameEl.textContent = '未設定';
+  const repId = company?.assigned_to || '';
+  const repUser = repId ? users.find(u => u.id === repId) : null;
+  if (nameEl) nameEl.textContent = repUser ? repUser.name : '未設定';
+
+  if (!fill) return;
+  const current = getSelectedUserId('prospect-assigned-to');
+  if (!current || prospectAssignedAuto) {
+    if (repUser) {
+      setSelectedUser('prospect-assigned-to', repId);
+      prospectAssignedAuto = true;
+    } else {
+      setSelectedUser('prospect-assigned-to', '');
+      prospectAssignedAuto = false;
+    }
   }
 }
 
@@ -2342,6 +2338,7 @@ function escNl(str) {
 
 // ===== 案件会議サマリー =====
 let meetingProspects = [];
+let meetingFiltered = []; // 画面に表示中（絞り込み・並び替え後）の案件。CSV/Excel出力に使う
 
 function toggleMeetingFilter() {
   const panel = document.getElementById('meeting-filter-panel');
@@ -2377,6 +2374,20 @@ async function loadMeeting() {
     .order('importance', { ascending: true, nullsFirst: false });
   if (error) { console.error(error); return; }
   meetingProspects = data || [];
+
+  // 最終活動日の計算（活動履歴の取得に失敗しても、一覧そのものは表示する）
+  const lastActMap = {};
+  try {
+    const { data: acts, error: actErr } = await db.from('activities').select('prospect_id, activity_date').is('deleted_at', null).limit(5000);
+    if (actErr) throw actErr;
+    (acts || []).forEach(a => {
+      if (!a.prospect_id || !a.activity_date) return;
+      if (!lastActMap[a.prospect_id] || a.activity_date > lastActMap[a.prospect_id]) lastActMap[a.prospect_id] = a.activity_date;
+    });
+  } catch (e) {
+    console.error('活動履歴の取得に失敗しました（最終活動は一部正しく表示されません）', e);
+  }
+  meetingProspects.forEach(p => computeLastMove(p, lastActMap[p.id]));
 
   await loadUsers();
 
@@ -2463,9 +2474,64 @@ function onMeetingDeptChange() {
 
 function toggleMeetingAmountSort() {
   meetingAmountSort = meetingAmountSort === 'desc' ? 'asc' : meetingAmountSort === 'asc' ? null : 'desc';
-  const icon = document.getElementById('meeting-amount-sort-icon');
-  if (icon) icon.textContent = meetingAmountSort === 'desc' ? '↓' : meetingAmountSort === 'asc' ? '↑' : '↕';
+  meetingLastSort = null;
+  updateMeetingSortIcons();
   filterMeeting();
+}
+
+// 最終活動：1回目＝古い順（止まっている案件が上）、2回目＝新しい順、3回目＝解除
+function toggleMeetingLastSort() {
+  meetingLastSort = meetingLastSort === null ? 'asc' : meetingLastSort === 'asc' ? 'desc' : null;
+  meetingAmountSort = null;
+  updateMeetingSortIcons();
+  filterMeeting();
+}
+
+function updateMeetingSortIcons() {
+  const a = document.getElementById('meeting-amount-sort-icon');
+  if (a) a.textContent = meetingAmountSort === 'desc' ? '↓' : meetingAmountSort === 'asc' ? '↑' : '↕';
+  const l = document.getElementById('meeting-last-sort-icon');
+  if (l) l.textContent = meetingLastSort === 'desc' ? '↓' : meetingLastSort === 'asc' ? '↑' : '↕';
+}
+
+// ===== 最終活動日の計算 =====
+function toLocalDateStr(value) {
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d)) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// 最終活動日 = 活動記録の活動日・ステータス変更日・起票日のうち最も新しい日付
+function computeLastMove(p, lastActivityDate) {
+  const cands = [];
+  if (lastActivityDate) cands.push(lastActivityDate);
+  (p.prospect_histories || []).forEach(h => {
+    if (h.status_from !== null && h.changed_at) cands.push(toLocalDateStr(h.changed_at));
+  });
+  if (p.created_at) cands.push(toLocalDateStr(p.created_at));
+  cands.sort();
+  p._lastMove = cands.length ? cands[cands.length - 1] : '';
+  if (p._lastMove) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const last = new Date(p._lastMove + 'T00:00:00');
+    p._daysAgo = Math.max(0, Math.round((today - last) / 86400000));
+  } else {
+    p._daysAgo = null;
+  }
+}
+
+function lastMoveHtml(p) {
+  if (!p._lastMove) return '<span style="color:var(--text-faint);font-size:11px">—</span>';
+  const [y, m, d] = p._lastMove.split('-');
+  const label = y === String(new Date().getFullYear()) ? `${m}/${d}` : `${y}/${m}/${d}`;
+  const stale = p._daysAgo > STALE_DAYS;
+  const style = stale
+    ? 'background:var(--danger-light);color:var(--danger);font-weight:600;padding:2px 6px;border-radius:4px'
+    : 'color:var(--text-muted)';
+  return `<span style="${style};font-size:11px;white-space:nowrap;display:inline-block;line-height:1.4">${label}<br>${p._daysAgo}日前</span>`;
 }
 
 function filterMeeting() {
@@ -2486,7 +2552,8 @@ function filterMeeting() {
     const matchDept = !deptSel || p.users?.department === deptSel;
     const matchSection = !sectionSel || p.users?.section === sectionSel;
     const matchMine = !showMyMeeting || p.assigned_to === currentUser?.id;
-    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchDept && matchSection && matchMine;
+    const matchUnassigned = !showUnassignedMeeting || !p.assigned_to;
+    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchDept && matchSection && matchMine && matchUnassigned;
   });
 
   filtered.sort((a, b) => {
@@ -2495,6 +2562,11 @@ function filterMeeting() {
       const bv = Number(b.expected_amount) || 0;
       return meetingAmountSort === 'desc' ? bv - av : av - bv;
     }
+    if (meetingLastSort) {
+      const av = a._lastMove || '';
+      const bv = b._lastMove || '';
+      return meetingLastSort === 'desc' ? bv.localeCompare(av) : av.localeCompare(bv);
+    }
     if (a.importance !== b.importance) {
       const order = {'A':0,'B':1,'C':2};
       return (order[a.importance] ?? 3) - (order[b.importance] ?? 3);
@@ -2502,13 +2574,15 @@ function filterMeeting() {
     return a.status - b.status;
   });
 
+  meetingFiltered = filtered;
+
   const totalAmount = filtered.reduce((sum, p) => sum + (Number(p.expected_amount) || 0), 0);
   document.getElementById('meeting-count').textContent = `${filtered.length}件`;
   document.getElementById('meeting-total-amount').textContent = totalAmount > 0 ? `見込み合計：¥${totalAmount.toLocaleString()}` : '';
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -2527,8 +2601,9 @@ function filterMeeting() {
       <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
       <td style="color:var(--text-muted)">${[...new Set((p.prospect_categories || []).map(c => c.category))].join('・') || '—'}</td>
       <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
-      <td style="color:var(--text-muted)">${esc(p.users?.name || '—')}</td>
+      <td>${p.users?.name ? `<span style="color:var(--text-muted)">${esc(p.users.name)}</span>` : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
+      <td>${lastMoveHtml(p)}</td>
       <td>${latestChangeHtml}</td>
       <td style="color:var(--text-muted)">${formatTiming(p)}</td>
       <td style="text-align:right" class="amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</td>
@@ -2537,26 +2612,11 @@ function filterMeeting() {
 }
 
 function getFilteredMeetingData() {
-  const statuses = getCheckedValues('meeting-status-cb').map(Number);
-  const confidences = getCheckedValues('meeting-confidence-cb');
-  const categories = getCheckedValues('meeting-category-cb');
-  const contracts = getCheckedValues('meeting-contract-cb');
-  const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
-  const types = getCheckedValues('meeting-type-cb');
-  return meetingProspects.filter(p => {
-    const matchStatus = statuses.length === 0 || statuses.includes(p.status);
-    const matchConfidence = confidences.length === 0 || confidences.includes(p.importance) || (confidences.includes('none') && !p.importance);
-    const pCats = (p.prospect_categories||[]).map(c=>c.category);
-    const matchCategory = categories.length === 0 || categories.some(c => c === 'none' ? pCats.length === 0 : pCats.includes(c));
-    const matchContract = contracts.length === 0 || contracts.includes(p.contract_type) || (contracts.includes('none') && !p.contract_type);
-    const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
-    const matchType = types.length === 0 || types.includes(p.prospect_type) || (types.includes('none') && !p.prospect_type);
-    return matchStatus && matchConfidence && matchCategory && matchContract && matchAssigned && matchType;
-  });
+  return meetingFiltered;
 }
 
 function buildExportRows() {
-  const headers = ['重要度','得意先','企業規模','案件名','新規/保持','区分','種別','担当課','担当者','ステータス','時期','見込み額'];
+  const headers = ['重要度','得意先','市場規模','案件名','新規/保持','リピート/スポット','種別','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額'];
   const rows = getFilteredMeetingData().map(p => {
     const marketSize = p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '';
     return [
@@ -2570,6 +2630,7 @@ function buildExportRows() {
       p.users?.section || '',
       p.users?.name || '',
       STATUS_LABELS[p.status] || '',
+      p._lastMove || '',
       formatTiming(p),
       p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : ''
     ];
@@ -2653,19 +2714,8 @@ async function jumpToProspect(prospectId) {
 
 
 
-function toggleTimingFields() {
-  const type = document.getElementById('prospect-timing-type').value;
-  const monthly = document.getElementById('timing-monthly');
-  const midterm = document.getElementById('timing-midterm');
-  if (monthly) monthly.style.display = type === '月次' ? 'flex' : 'none';
-  if (midterm) midterm.style.display = type === '中期' ? 'flex' : 'none';
-}
-
+// 受注見込み時期（選択式1項目。旧「導入時期」の中期指定と同じ timing_label 列を使用）
 function formatTiming(p) {
-  if (!p.timing_type) return '—';
-  if (p.timing_type === '月次') {
-    return p.timing_year && p.timing_month ? `${p.timing_year}年${p.timing_month}月` : '—';
-  }
   return p.timing_label || '—';
 }
 
@@ -2728,12 +2778,31 @@ function toggleMyCompanies() {
   filterCompanies();
 }
 
+function setToggleBtn(id, on) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.classList.toggle('btn-primary', on);
+  btn.classList.toggle('btn-secondary', !on);
+}
+
 function toggleMyProspects() {
   showMyProspects = !showMyProspects;
-  const btn = document.getElementById('prospect-mine-btn');
-  btn.classList.toggle('btn-primary', showMyProspects);
-  btn.classList.toggle('btn-secondary', !showMyProspects);
+  if (showMyProspects) { showUnassignedProspects = false; setToggleBtn('prospect-unassigned-btn', false); }
+  setToggleBtn('prospect-mine-btn', showMyProspects);
   filterProspects();
+}
+
+function toggleUnassignedProspects() {
+  showUnassignedProspects = !showUnassignedProspects;
+  if (showUnassignedProspects) { showMyProspects = false; setToggleBtn('prospect-mine-btn', false); }
+  setToggleBtn('prospect-unassigned-btn', showUnassignedProspects);
+  filterProspects();
+}
+
+function toggleGroupBySection() {
+  groupProspectsBySection = !groupProspectsBySection;
+  setToggleBtn('prospect-group-btn', groupProspectsBySection);
+  renderProspects();
 }
 
 function toggleMyActivities() {
@@ -2746,9 +2815,15 @@ function toggleMyActivities() {
 
 function toggleMyMeeting() {
   showMyMeeting = !showMyMeeting;
-  const btn = document.getElementById('meeting-mine-btn');
-  btn.classList.toggle('btn-primary', showMyMeeting);
-  btn.classList.toggle('btn-secondary', !showMyMeeting);
+  if (showMyMeeting) { showUnassignedMeeting = false; setToggleBtn('meeting-unassigned-btn', false); }
+  setToggleBtn('meeting-mine-btn', showMyMeeting);
+  filterMeeting();
+}
+
+function toggleUnassignedMeeting() {
+  showUnassignedMeeting = !showUnassignedMeeting;
+  if (showUnassignedMeeting) { showMyMeeting = false; setToggleBtn('meeting-mine-btn', false); }
+  setToggleBtn('meeting-unassigned-btn', showUnassignedMeeting);
   filterMeeting();
 }
 
@@ -2779,6 +2854,7 @@ function searchUsersForSelect(selectId, query) {
 }
 
 function selectUserForSelect(selectId, id, name) {
+  if (selectId === 'prospect-assigned-to') prospectAssignedAuto = false;
   document.getElementById(selectId + '-user-input').value = id ? name : '';
   document.getElementById(selectId + '-user-id').value = id;
   const dd = document.getElementById(selectId + '-user-dropdown');

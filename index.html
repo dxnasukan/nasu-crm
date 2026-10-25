@@ -2829,6 +2829,18 @@ function toggleUnassignedMeeting() {
 
 
 
+// ===== 候補リスト（担当者・案件・得意先の検索欄）：外側をクリック／Esc／Tabで閉じる =====
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('[id$="-dropdown"]').forEach(dd => {
+    if (dd.style.display === 'none' || !dd.parentElement) return;
+    if (!dd.parentElement.contains(e.target)) dd.style.display = 'none';
+  });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' && e.key !== 'Tab') return;
+  document.querySelectorAll('[id$="-dropdown"]').forEach(dd => { dd.style.display = 'none'; });
+});
+
 // ===== 担当者インクリメンタルサーチ =====
 function searchUsersForSelect(selectId, query) {
   const dropdown = document.getElementById(selectId + '-user-dropdown');

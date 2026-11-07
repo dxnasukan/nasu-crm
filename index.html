@@ -562,7 +562,7 @@
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
   @media (max-width: 768px) { .guide-label { display: none; } }
 
-  /* ガイドライン */
+  /* 入力ルール（社内の「運用ガイドライン」（Word）と混同しないよう、画面上の名前は「入力ルール」に統一） */
   .guide-link { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; margin-right: 12px; white-space: nowrap; }
   .guide-link:hover { text-decoration: underline; }
   .guide-modal { max-width: 720px; }
@@ -727,7 +727,7 @@
       <button class="nav-btn" onclick="showPage('companies')" id="nav-btn-companies">得意先</button>
     </nav>
     <div class="header-user">
-      <button class="logout-btn" onclick="openModal('guide-modal')" title="入力ルール・使い方">📘<span class="guide-label"> ガイドライン</span></button>
+      <button class="logout-btn" onclick="openModal('guide-modal')" title="入力ルール">📘<span class="guide-label"> 入力ルール</span></button>
       <span class="header-user-name" id="header-username"></span>
       <button class="logout-btn" onclick="doLogout()">ログアウト</button>
     </div>
@@ -1291,12 +1291,12 @@
   </div>
 </div>
 
-<!-- ===== ガイドライン（入力ルール）モーダル ===== -->
+<!-- ===== 入力ルール モーダル ===== -->
 <!-- 案件登録モーダルの上からも開けるよう、z-index を高くしている -->
 <div class="modal-overlay" id="guide-modal" style="z-index:210" onclick="if(event.target===this)closeModal('guide-modal')">
   <div class="modal guide-modal">
     <div class="modal-header">
-      <span class="modal-title">📘 ガイドライン（入力ルール）</span>
+      <span class="modal-title">📘 入力ルール</span>
       <button class="modal-close" onclick="closeModal('guide-modal')">✕</button>
     </div>
     <div class="modal-body">

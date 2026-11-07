@@ -776,6 +776,7 @@
     <div class="header-user">
       <button class="logout-btn" onclick="openModal('guide-modal')" title="入力ルール">📘<span class="guide-label"> 入力ルール</span></button>
       <span class="header-user-name" id="header-username"></span>
+      <button class="logout-btn" onclick="openChangePasswordModal()" title="パスワード変更">🔑<span class="guide-label"> パスワード変更</span></button>
       <button class="logout-btn" onclick="doLogout()">ログアウト</button>
     </div>
   </header>
@@ -1363,6 +1364,37 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('activity-modal')">キャンセル</button>
       <button class="btn btn-primary" onclick="saveActivity()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== パスワード変更モーダル（ログイン中に変更する） ===== -->
+<div class="modal-overlay" id="change-password-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🔑 パスワード変更</span>
+      <button class="modal-close" onclick="closeModal('change-password-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="change-password-alert"></div>
+      <div class="form-group">
+        <label class="form-label">現在のパスワード</label>
+        <input type="password" class="form-control" id="cp-current" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しいパスワード</label>
+        <input type="password" class="form-control" id="cp-new" autocomplete="new-password" placeholder="8文字以上">
+      </div>
+      <div class="form-group">
+        <label class="form-label">新しいパスワード（確認）</label>
+        <input type="password" class="form-control" id="cp-confirm" autocomplete="new-password" placeholder="もう一度入力"
+          onkeydown="if(event.key==='Enter')doChangePassword()">
+      </div>
+      <div class="form-hint">8文字以上で、英字と数字を組み合わせてください。他の人には教えないでください。</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('change-password-modal')">キャンセル</button>
+      <button class="btn btn-primary" id="cp-btn" onclick="doChangePassword()">変更する</button>
     </div>
   </div>
 </div>
@@ -1973,7 +2005,7 @@ async function selectProspect(id) {
                 <div style="display:flex;gap:6px;align-items:center">
                   ${a.activity_type ? `<span class="activity-card-type">${esc(ACTIVITY_TYPE_LABELS[a.activity_type] || a.activity_type)}</span>` : ''}
                   ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>` : ''}
-                  ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();deleteActivity('${a.id}')">削除</button>` : ''}
+                  ${canDeleteActivity(a) ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();deleteActivity('${a.id}')">削除</button>` : ''}
                 </div>
               </div>
               <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
@@ -2230,7 +2262,7 @@ function renderActivities() {
       <td style="color:var(--text-muted);font-size:12px">${esc(a.users?.name || '—')}</td>
       <td>
         ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>` : ''}
-        ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteActivity('${a.id}')">削除</button>` : ''}
+        ${canDeleteActivity(a) ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteActivity('${a.id}')">削除</button>` : ''}
       </td>
     </tr>
   `).join('');
@@ -3192,6 +3224,11 @@ async function deleteProspect(id) {
   document.getElementById('prospect-detail').innerHTML = '<div class="empty"><div class="empty-text">案件を選択してください</div></div>';
 }
 
+// 活動記録を削除できるのは、管理者と、その活動を記録した本人（担当者）
+function canDeleteActivity(a) {
+  return currentUserProfile?.role === 'admin' || (!!currentUser?.id && a.assigned_to === currentUser.id);
+}
+
 async function deleteActivity(id) {
   if (!confirm('この活動履歴を削除しますか？')) return;
   const { error } = await db.from('activities')
@@ -3342,6 +3379,46 @@ async function doLogin() {
   // データ読み込み
   loadCompanies();
   await loadProspects();
+}
+
+// ===== パスワード変更（ログイン中） =====
+function openChangePasswordModal() {
+  ['cp-current', 'cp-new', 'cp-confirm'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('change-password-alert').innerHTML = '';
+  const btn = document.getElementById('cp-btn');
+  btn.disabled = false; btn.textContent = '変更する';
+  openModal('change-password-modal');
+  setTimeout(() => document.getElementById('cp-current').focus(), 50);
+}
+
+async function doChangePassword() {
+  const current = document.getElementById('cp-current').value;
+  const next = document.getElementById('cp-new').value;
+  const confirmPw = document.getElementById('cp-confirm').value;
+  const fail = msg => showAlert('change-password-alert', msg, 'error');
+  if (!current || !next || !confirmPw) return fail('すべての欄を入力してください');
+  if (next.length < 8) return fail('新しいパスワードは8文字以上で入力してください');
+  if (next !== confirmPw) return fail('新しいパスワードが一致しません');
+  if (next === current) return fail('今と違うパスワードを入力してください');
+  if (!currentUser?.email) return fail('ログイン情報を確認できませんでした。いったんログアウトして、もう一度ログインしてください');
+
+  const btn = document.getElementById('cp-btn');
+  btn.disabled = true; btn.textContent = '変更中...';
+  try {
+    // 本人確認：現在のパスワードが正しいか（席を離れた間に他の人が変更するのを防ぐ）
+    const { error: authErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: current });
+    if (authErr) return fail('現在のパスワードが正しくありません');
+    const { error } = await db.auth.updateUser({ password: next });
+    if (error) return fail('変更できませんでした：' + error.message);
+    ['cp-current', 'cp-new', 'cp-confirm'].forEach(id => { document.getElementById(id).value = ''; });
+    showAlert('change-password-alert', 'パスワードを変更しました。次回から新しいパスワードでログインしてください', 'success');
+    setTimeout(() => closeModal('change-password-modal'), 2500);
+  } catch (e) {
+    console.error(e);
+    fail('通信エラーが発生しました。もう一度お試しください');
+  } finally {
+    btn.disabled = false; btn.textContent = '変更する';
+  }
 }
 
 async function doLogout() {

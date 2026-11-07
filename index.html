@@ -562,6 +562,17 @@
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
   @media (max-width: 768px) { .guide-label { display: none; } }
 
+  /* 案件会議サマリーのフィルター（常に表示） */
+  .mf-panel { padding: 10px 20px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  .mf-row { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+  .mf-item { display: flex; align-items: center; gap: 6px; }
+  .mf-label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .mf-select { width: 140px; font-size: 13px; padding: 5px 8px; }
+  .filter-toggle-btn { padding: 4px 10px; border: 1px solid var(--border-strong); border-radius: 4px; font-size: 12px; cursor: pointer; background: var(--surface); color: var(--text); white-space: nowrap; }
+  .filter-toggle-btn:hover { border-color: var(--accent); }
+  .filter-toggle-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
+  @media (max-width: 768px) { .mf-panel { padding: 10px 12px; } .mf-row { gap: 8px 12px; } }
+
   /* 入力ルール（社内の「運用ガイドライン」（Word）と混同しないよう、画面上の名前は「入力ルール」に統一） */
   .guide-link { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; margin-right: 12px; white-space: nowrap; }
   .guide-link:hover { text-decoration: underline; }
@@ -865,9 +876,6 @@
         <div class="card-header" id="meeting-toolbar">
           <span class="card-title">案件会議サマリー</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-secondary" id="meeting-mine-btn" onclick="toggleMyMeeting()" style="white-space:nowrap">自分の担当</button>
-            <button class="btn btn-secondary" id="meeting-unassigned-btn" onclick="toggleUnassignedMeeting()" style="white-space:nowrap">担当未設定</button>
-            <button class="btn btn-secondary" onclick="toggleMeetingFilter()">🔽 フィルター</button>
             <div style="position:relative">
               <button class="btn btn-primary" onclick="toggleOutputMenu()">📤 出力 ▾</button>
               <div id="output-menu" style="display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);z-index:200;min-width:160px">
@@ -879,14 +887,24 @@
           </div>
         </div>
 
-        <!-- フィルターパネル -->
-        <div id="meeting-filter-panel" style="display:none;padding:14px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
-          <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+        <!-- フィルター（常に表示）。会議で議論する順に近い並び：重要度→ステータス→種別→新規/保持→担当 -->
+        <div id="meeting-filter-panel" class="mf-panel">
+          <div class="mf-row">
+
+            <!-- 重要度 -->
+            <div class="mf-item">
+              <span class="mf-label">重要度</span>
+              <div style="display:flex;gap:4px">
+                <button class="filter-toggle-btn" id="imp-btn-A" onclick="toggleFilterBtn('imp','A')">A</button>
+                <button class="filter-toggle-btn" id="imp-btn-B" onclick="toggleFilterBtn('imp','B')">B</button>
+                <button class="filter-toggle-btn" id="imp-btn-C" onclick="toggleFilterBtn('imp','C')">C</button>
+              </div>
+            </div>
 
             <!-- ステータス -->
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">ステータス</span>
-              <select id="meeting-status-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
+            <div class="mf-item">
+              <span class="mf-label">ステータス</span>
+              <select id="meeting-status-select" onchange="filterMeeting()" class="form-control mf-select">
                 <option value="">すべて</option>
                 <option value="1">情報収集中</option>
                 <option value="2">アプローチ中</option>
@@ -898,29 +916,10 @@
               </select>
             </div>
 
-            <!-- 重要度 -->
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">重要度</span>
-              <div style="display:flex;gap:4px">
-                <button class="filter-toggle-btn" id="imp-btn-A" onclick="toggleFilterBtn('imp','A')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">A</button>
-                <button class="filter-toggle-btn" id="imp-btn-B" onclick="toggleFilterBtn('imp','B')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">B</button>
-                <button class="filter-toggle-btn" id="imp-btn-C" onclick="toggleFilterBtn('imp','C')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">C</button>
-              </div>
-            </div>
-
-            <!-- 新規/保持 -->
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">新規/保持</span>
-              <div style="display:flex;gap:4px">
-                <button class="filter-toggle-btn" id="type-btn-新規" onclick="toggleFilterBtn('type','新規')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">新規</button>
-                <button class="filter-toggle-btn" id="type-btn-保持" onclick="toggleFilterBtn('type','保持')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">保持</button>
-              </div>
-            </div>
-
             <!-- 種別 -->
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">種別</span>
-              <select id="meeting-category-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
+            <div class="mf-item">
+              <span class="mf-label">種別</span>
+              <select id="meeting-category-select" onchange="filterMeeting()" class="form-control mf-select">
                 <option value="">すべて</option>
                 <option value="__none__">未選択</option>
                 <option value="分析">分析</option>
@@ -936,32 +935,42 @@
               </select>
             </div>
 
-            <!-- 担当者検索 -->
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">案件担当</span>
-              <input type="text" id="meeting-assigned-search" placeholder="名前で絞り込み..."
-                style="padding:5px 10px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;width:140px"
-                oninput="filterMeeting()">
+            <!-- 新規/保持 -->
+            <div class="mf-item">
+              <span class="mf-label">新規/保持</span>
+              <div style="display:flex;gap:4px">
+                <button class="filter-toggle-btn" id="type-btn-新規" onclick="toggleFilterBtn('type','新規')">新規</button>
+                <button class="filter-toggle-btn" id="type-btn-保持" onclick="toggleFilterBtn('type','保持')">保持</button>
+              </div>
             </div>
+          </div>
+          <div class="mf-row">
 
             <!-- 担当部 -->
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当部</span>
-              <select id="meeting-dept-select" onchange="onMeetingDeptChange()" class="form-control" style="width:110px;font-size:13px">
+            <div class="mf-item">
+              <span class="mf-label">担当部</span>
+              <select id="meeting-dept-select" onchange="onMeetingDeptChange()" class="form-control mf-select" style="width:110px">
                 <option value="">すべて</option>
               </select>
             </div>
 
             <!-- 担当課 -->
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">担当課</span>
-              <select id="meeting-section-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
+            <div class="mf-item">
+              <span class="mf-label">担当課</span>
+              <select id="meeting-section-select" onchange="filterMeeting()" class="form-control mf-select">
                 <option value="">すべて</option>
               </select>
             </div>
 
+            <!-- 案件担当 -->
+            <div class="mf-item">
+              <span class="mf-label">案件担当</span>
+              <input type="text" id="meeting-assigned-search" class="form-control mf-select" placeholder="名前で絞り込み..." autocomplete="off" oninput="filterMeeting()">
+              <button class="filter-toggle-btn" id="meeting-unassigned-btn" onclick="toggleUnassignedMeeting()">担当未設定</button>
+            </div>
+
             <!-- リセット -->
-            <button class="btn btn-secondary btn-sm" onclick="resetMeetingFilters()">リセット</button>
+            <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="resetMeetingFilters()">↺ 条件をリセット</button>
           </div>
 
           <!-- 非表示（後方互換のため残す） -->
@@ -2415,11 +2424,6 @@ function escNl(str) {
 let meetingProspects = [];
 let meetingFiltered = []; // 画面に表示中（絞り込み・並び替え後）の案件。CSV/Excel出力に使う
 
-function toggleMeetingFilter() {
-  const panel = document.getElementById('meeting-filter-panel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
 function toggleOutputMenu() {
   const menu = document.getElementById('output-menu');
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
@@ -2617,9 +2621,8 @@ function filterMeeting() {
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
     const matchDept = !deptSel || p.users?.department === deptSel;
     const matchSection = !sectionSel || p.users?.section === sectionSel;
-    const matchMine = !showMyMeeting || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedMeeting || !p.assigned_to;
-    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchDept && matchSection && matchMine && matchUnassigned;
+    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchDept && matchSection && matchUnassigned;
   });
 
   filtered.sort((a, b) => {
@@ -2713,9 +2716,20 @@ function exportCSV() {
 function exportExcel() {
   document.getElementById('output-menu').style.display = 'none';
   const { headers, rows } = buildExportRows();
-  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table>`;
-  html += '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
-  rows.forEach(r => { html += '<tr>' + r.map(v => `<td>${v}</td>`).join('') + '</tr>'; });
+  // 罫線・見出しの色を付けて、Excelで開いたときに表として見やすくする
+  const style = `<style>
+    table { border-collapse: collapse; font-family: 'Meiryo', sans-serif; font-size: 10pt; }
+    th { background: #3dbdd8; color: #ffffff; font-weight: bold; border: .5pt solid #7f9ea8; padding: 4px 6px; white-space: nowrap; }
+    td { border: .5pt solid #b8c8ce; padding: 3px 6px; vertical-align: top; mso-number-format: '\\@'; }
+    tr.even td { background: #f3f8fa; }
+    td.amount { text-align: right; }
+  </style>`;
+  const amountCol = headers.indexOf('見込み額');
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8">${style}</head><body><table>`;
+  html += '<tr>' + headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
+  rows.forEach((r, i) => {
+    html += `<tr class="${i % 2 ? 'even' : ''}">` + r.map((v, j) => `<td${j === amountCol ? ' class="amount"' : ''}>${esc(v)}</td>`).join('') + '</tr>';
+  });
   html += '</table></body></html>';
   const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
   const a = document.createElement('a');
@@ -2787,17 +2801,9 @@ const filterState = { imp: new Set(), type: new Set() };
 
 function toggleFilterBtn(group, value) {
   const btn = document.getElementById(`${group}-btn-${value}`);
-  if (filterState[group].has(value)) {
-    filterState[group].delete(value);
-    btn.style.background = 'var(--surface)';
-    btn.style.color = 'var(--text)';
-    btn.style.borderColor = 'var(--border-strong)';
-  } else {
-    filterState[group].add(value);
-    btn.style.background = 'var(--accent)';
-    btn.style.color = 'white';
-    btn.style.borderColor = 'var(--accent)';
-  }
+  if (filterState[group].has(value)) filterState[group].delete(value);
+  else filterState[group].add(value);
+  btn?.classList.toggle('on', filterState[group].has(value));
   filterMeeting();
 }
 
@@ -2810,18 +2816,10 @@ function resetMeetingFilters() {
   document.getElementById('meeting-section-select').value = '';
   // 担当者検索
   document.getElementById('meeting-assigned-search').value = '';
-  // ボタンフィルター
-  ['imp','type'].forEach(group => {
-    filterState[group].forEach(val => {
-      const btn = document.getElementById(`${group}-btn-${val}`);
-      if (btn) {
-        btn.style.background = 'var(--surface)';
-        btn.style.color = 'var(--text)';
-        btn.style.borderColor = 'var(--border-strong)';
-      }
-    });
-    filterState[group].clear();
-  });
+  // ボタンフィルター（重要度・新規/保持・担当未設定）
+  ['imp','type'].forEach(group => filterState[group].clear());
+  showUnassignedMeeting = false;
+  document.querySelectorAll('#meeting-filter-panel .filter-toggle-btn').forEach(btn => btn.classList.remove('on'));
   filterMeeting();
 }
 
@@ -2829,7 +2827,6 @@ function resetMeetingFilters() {
 let showMyCompanies = false;
 let showMyProspects = false;
 let showMyActivities = false;
-let showMyMeeting = false;
 
 function toggleMyCompanies() {
   showMyCompanies = !showMyCompanies;
@@ -2868,17 +2865,9 @@ function toggleMyActivities() {
   filterActivities();
 }
 
-function toggleMyMeeting() {
-  showMyMeeting = !showMyMeeting;
-  if (showMyMeeting) { showUnassignedMeeting = false; setToggleBtn('meeting-unassigned-btn', false); }
-  setToggleBtn('meeting-mine-btn', showMyMeeting);
-  filterMeeting();
-}
-
 function toggleUnassignedMeeting() {
   showUnassignedMeeting = !showUnassignedMeeting;
-  if (showUnassignedMeeting) { showMyMeeting = false; setToggleBtn('meeting-mine-btn', false); }
-  setToggleBtn('meeting-unassigned-btn', showUnassignedMeeting);
+  document.getElementById('meeting-unassigned-btn')?.classList.toggle('on', showUnassignedMeeting);
   filterMeeting();
 }
 

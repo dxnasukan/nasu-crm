@@ -828,7 +828,7 @@
             </div>
             <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
             <button class="btn btn-secondary" id="prospect-mysection-btn" onclick="toggleMySection()" style="white-space:nowrap">自分の課</button>
-            <select class="form-control" id="prospect-section-filter" onchange="filterProspects()" style="width:auto;max-width:190px"><option value="">課（全て）</option></select>
+            <select class="form-control" id="prospect-section-filter" onchange="filterProspects()" style="width:auto;max-width:190px"><option value="">部・課（全て）</option></select>
             <button class="btn btn-secondary" id="prospect-unassigned-btn" onclick="toggleUnassignedProspects()" style="white-space:nowrap">担当未設定</button>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
               <option value="">ステータス（全て）</option>
@@ -978,9 +978,9 @@
               </div>
             </div>
 
-            <!-- 担当課（部と課を1つにまとめた選択） -->
+            <!-- 部・課（部全体／課を1つにまとめた選択） -->
             <div class="mf-item">
-              <span class="mf-label">担当課</span>
+              <span class="mf-label">部・課</span>
               <select id="meeting-section-select" onchange="filterMeeting()" class="form-control mf-select">
                 <option value="">すべて</option>
               </select>
@@ -1704,25 +1704,57 @@ function filterProspects() { renderProspects(); }
 // ===== 案件一覧：課の絞り込み =====
 // 選択肢は「部＋課」の組み合わせ。案件の担当者の所属から作る（自分の課は、案件がなくても必ず選べるようにする）
 // 部長以上は案件会議サマリー（部・課で絞り込める）で見る前提のため、部だけの絞り込みは置かない
+// ===== 部・課の絞り込み（案件一覧・案件会議で共通） =====
+// 値は「部||課」。課の部分が「*」のときは、その部全体（部長など課のない人も含む）。
+function deptSectionOptions(userList) {
+  const depts = new Map(); // 部 → 課のSet
+  const noDept = new Set(); // 部がなく課だけある人
+  userList.forEach(u => {
+    const d = u?.department || '', s = u?.section || '';
+    if (d) { if (!depts.has(d)) depts.set(d, new Set()); if (s) depts.get(d).add(s); }
+    else if (s) noDept.add(s);
+  });
+  const opts = [];
+  [...depts.keys()].sort((a, b) => a.localeCompare(b, 'ja')).forEach(d => {
+    opts.push({ key: d + '||*', label: d + '（全体）' });
+    [...depts.get(d)].sort((a, b) => a.localeCompare(b, 'ja')).forEach(s => opts.push({ key: d + '||' + s, label: '　└ ' + s }));
+  });
+  [...noDept].sort((a, b) => a.localeCompare(b, 'ja')).forEach(s => opts.push({ key: '||' + s, label: s }));
+  return opts;
+}
+
+function matchDeptSection(key, user) {
+  if (!key) return true;
+  const [d, s] = key.split('||');
+  const ud = user?.department || '', us = user?.section || '';
+  return s === '*' ? ud === d : (ud === d && us === s);
+}
+
+function deptSectionLabel(key) {
+  const [d, s] = key.split('||');
+  return s === '*' ? d + '（全体）' : [d, s].filter(Boolean).join('　');
+}
+
 function updateProspectSectionFilter() {
   const sel = document.getElementById('prospect-section-filter');
   if (!sel) return;
-  const pairs = new Map(); // key = 部||課
-  const add = (d, s) => { if (d && s) pairs.set(d + '||' + s, { d, s }); };
-  prospects.forEach(p => add(p.users?.department, p.users?.section));
-  const me = currentUserProfile;
-  add(me?.department, me?.section);
-  const list = [...pairs.entries()].sort((a, b) => (a[1].d + a[1].s).localeCompare(b[1].d + b[1].s, 'ja'));
+  const opts = deptSectionOptions([...prospects.map(p => p.users), currentUserProfile]);
   const prev = sel.value;
-  sel.innerHTML = '<option value="">課（全て）</option>' + list.map(([k, v]) => `<option value="${esc(k)}">${esc(v.d)}　${esc(v.s)}</option>`).join('');
-  if (pairs.has(prev)) sel.value = prev;
+  sel.innerHTML = '<option value="">部・課（全て）</option>' + opts.map(o => `<option value="${esc(o.key)}">${esc(o.label)}</option>`).join('');
+  if (opts.some(o => o.key === prev)) sel.value = prev;
   const btn = document.getElementById('prospect-mysection-btn');
-  if (btn) btn.style.display = myProspectSectionKey() ? '' : 'none'; // 課がない人（部長など）にはボタンを出さない
+  if (btn) {
+    const me = currentUserProfile;
+    btn.style.display = myProspectSectionKey() ? '' : 'none';
+    btn.textContent = (me?.department && !me?.section) ? '自分の部' : '自分の課'; // 部長など課のない人は「自分の部」
+  }
 }
 
 function myProspectSectionKey() {
   const me = currentUserProfile;
-  return (me?.department && me?.section) ? me.department + '||' + me.section : '';
+  if (me?.department && me?.section) return me.department + '||' + me.section;
+  if (me?.department) return me.department + '||*';
+  return '';
 }
 
 // 自分の課で絞り込む（もう一度押すと解除）
@@ -1749,7 +1781,6 @@ function renderProspects() {
   const search = document.getElementById('prospect-search').value.toLowerCase();
   const status = document.getElementById('prospect-status-filter').value;
   const sectionKey = document.getElementById('prospect-section-filter')?.value || '';
-  const [fDept, fSection] = sectionKey ? sectionKey.split('||') : ['', ''];
   const myKey = myProspectSectionKey();
   setToggleBtn('prospect-mysection-btn', !!myKey && sectionKey === myKey);
 
@@ -1758,7 +1789,7 @@ function renderProspects() {
     const matchStatus = !status || p.status == status;
     const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedProspects || !p.assigned_to;
-    const matchSection = !sectionKey || (p.users?.department === fDept && p.users?.section === fSection);
+    const matchSection = matchDeptSection(sectionKey, p.users);
     return matchSearch && matchStatus && matchMine && matchUnassigned && matchSection;
   });
 
@@ -1768,7 +1799,7 @@ function renderProspects() {
     const conds = [];
     if (search) conds.push('検索：' + document.getElementById('prospect-search').value);
     if (status) conds.push('ステータス：' + (STATUS_LABELS[status] || status));
-    if (sectionKey) conds.push('課：' + fDept + '　' + fSection);
+    if (sectionKey) conds.push('部・課：' + deptSectionLabel(sectionKey));
     if (showMyProspects) conds.push('自分の担当');
     if (showUnassignedProspects) conds.push('担当未設定');
     list.innerHTML = conds.length
@@ -2468,7 +2499,7 @@ function getMeetingActiveFilters() {
     add('種別：' + selText('meeting-category-select'), () => { document.getElementById('meeting-category-select').value = ''; filterMeeting(); });
   [...filterState.type].forEach(v => add(v, () => toggleFilterBtn('type', v)));
   if (document.getElementById('meeting-section-select').value)
-    add('担当課：' + selText('meeting-section-select'), () => { document.getElementById('meeting-section-select').value = ''; filterMeeting(); });
+    add('部・課：' + deptSectionLabel(document.getElementById('meeting-section-select').value), () => { document.getElementById('meeting-section-select').value = ''; filterMeeting(); });
   const name = document.getElementById('meeting-assigned-search').value.trim();
   if (name) add('案件担当：' + name, () => { document.getElementById('meeting-assigned-search').value = ''; filterMeeting(); });
   if (showUnassignedMeeting) add('案件担当：未設定', () => toggleUnassignedMeeting());
@@ -2581,17 +2612,10 @@ function updateMeetingSectionOptions() {
   const sel = document.getElementById('meeting-section-select');
   if (!sel) return;
   const prev = sel.value;
-  const keys = new Map();
-  meetingProspects.forEach(p => {
-    const d = p.users?.department || '';
-    const s = p.users?.section || '';
-    if (!d && !s) return;
-    keys.set(d + '||' + s, [d, s].filter(Boolean).join('　'));
-  });
-  const sorted = [...keys.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+  const opts = deptSectionOptions(meetingProspects.map(p => p.users));
   sel.innerHTML = '<option value="">すべて</option>' +
-    sorted.map(([k, label]) => `<option value="${esc(k)}">${esc(label)}</option>`).join('');
-  if (keys.has(prev)) sel.value = prev;
+    opts.map(o => `<option value="${esc(o.key)}">${esc(o.label)}</option>`).join('');
+  if (opts.some(o => o.key === prev)) sel.value = prev;
 }
 
 function toggleMeetingAmountSort() {
@@ -2661,7 +2685,6 @@ function filterMeeting() {
   const statusSel = document.getElementById('meeting-status-select')?.value || '';
   const categorySel = document.getElementById('meeting-category-select')?.value || '';
   const sectionKey = document.getElementById('meeting-section-select')?.value || '';
-  const [deptSel, sectionSel] = sectionKey ? sectionKey.split('||') : ['', ''];
   const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
 
   let filtered = meetingProspects.filter(p => {
@@ -2671,10 +2694,9 @@ function filterMeeting() {
     const matchCategory = !categorySel || (categorySel === '__none__' ? pCats.length === 0 : pCats.includes(categorySel));
     const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
-    const matchDept = !sectionKey || (p.users?.department || '') === deptSel;
-    const matchSection = !sectionKey || (p.users?.section || '') === sectionSel;
+    const matchSection = matchDeptSection(sectionKey, p.users);
     const matchUnassigned = !showUnassignedMeeting || !p.assigned_to;
-    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchDept && matchSection && matchUnassigned;
+    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchSection && matchUnassigned;
   });
 
   filtered.sort((a, b) => {

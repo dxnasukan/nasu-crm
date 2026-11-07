@@ -560,6 +560,22 @@
     transition: background 0.15s;
   }
   .logout-btn:hover { background: rgba(255,255,255,0.25); }
+  @media (max-width: 768px) { .guide-label { display: none; } }
+
+  /* ガイドライン */
+  .guide-link { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; margin-right: 12px; white-space: nowrap; }
+  .guide-link:hover { text-decoration: underline; }
+  .guide-modal { max-width: 720px; }
+  .guide-section { margin-bottom: 24px; }
+  .guide-section:last-child { margin-bottom: 0; }
+  .guide-section h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent-light); }
+  .guide-section dl { display: grid; grid-template-columns: 130px 1fr; gap: 8px 12px; font-size: 13px; }
+  .guide-section dt { font-weight: 600; color: var(--text); }
+  .guide-section dd { color: var(--text); }
+  .guide-section ul { padding-left: 18px; font-size: 13px; }
+  .guide-section li { margin-bottom: 4px; }
+  .guide-note { background: var(--bg); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  @media (max-width: 768px) { .guide-section dl { grid-template-columns: 1fr; gap: 2px; } .guide-section dd { margin-bottom: 8px; } }
   .btn-danger { background: var(--danger); color: white; border: none; }
   .btn-danger:hover { background: #b91c1c; }
 
@@ -711,6 +727,7 @@
       <button class="nav-btn" onclick="showPage('companies')" id="nav-btn-companies">得意先</button>
     </nav>
     <div class="header-user">
+      <button class="logout-btn" onclick="openModal('guide-modal')" title="入力ルール・使い方">📘<span class="guide-label"> ガイドライン</span></button>
       <span class="header-user-name" id="header-username"></span>
       <button class="logout-btn" onclick="doLogout()">ログアウト</button>
     </div>
@@ -900,20 +917,12 @@
               </div>
             </div>
 
-            <!-- リピート/スポット -->
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">リピート/スポット</span>
-              <div style="display:flex;gap:4px">
-                <button class="filter-toggle-btn" id="contract-btn-リピート" onclick="toggleFilterBtn('contract','リピート')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">リピート</button>
-                <button class="filter-toggle-btn" id="contract-btn-スポット" onclick="toggleFilterBtn('contract','スポット')" style="padding:4px 10px;border:1px solid var(--border-strong);border-radius:4px;font-size:12px;cursor:pointer;background:var(--surface)">スポット</button>
-              </div>
-            </div>
-
             <!-- 種別 -->
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">種別</span>
               <select id="meeting-category-select" onchange="filterMeeting()" class="form-control" style="width:130px;font-size:13px">
                 <option value="">すべて</option>
+                <option value="__none__">未選択</option>
                 <option value="分析">分析</option>
                 <option value="水質">水質</option>
                 <option value="大気">大気</option>
@@ -975,10 +984,8 @@
               <tr>
                 <th style="width:44px;text-align:center">重要度</th>
                 <th style="min-width:120px">得意先</th>
-                <th style="width:44px;text-align:center">市場規模</th>
                 <th style="min-width:140px">案件名</th>
                 <th style="width:56px;text-align:center">新規/保持</th>
-                <th style="width:64px;text-align:center;white-space:normal;line-height:1.3">リピート/<br>スポット</th>
                 <th style="min-width:80px">種別</th>
                 <th style="width:72px">担当課</th>
                 <th style="width:72px">案件担当</th>
@@ -990,7 +997,7 @@
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="14" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="12" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1076,6 +1083,7 @@
   <div class="modal">
     <div class="modal-header">
       <span class="modal-title" id="prospect-modal-title">案件登録</span>
+      <span class="guide-link" onclick="openModal('guide-modal')">📘 入力ルール</span>
       <button class="modal-close" onclick="closeModal('prospect-modal')">✕</button>
     </div>
     <div class="modal-body">
@@ -1092,7 +1100,7 @@
           <div class="form-group">
             <label class="form-label">得意先 *</label>
             <select class="form-control" id="prospect-company" onchange="presetAssignedFromCompany()"></select>
-            <div class="form-hint">販売管理に登録されている得意先を選択してください。得意先として確定していない場合（噂話段階など）は「未納入客先」を選び、会社名の目安を案件名に記入してください。</div>
+            <div class="form-hint">候補の中から選んでください</div>
           </div>
         </div>
         <div class="span-2">
@@ -1153,7 +1161,6 @@
               <option value="3年以内">3年以内</option>
               <option value="未定">未定</option>
             </select>
-            <div class="form-hint">当てはまるものの中で、一番近いものを選択</div>
           </div>
         </div>
         <div>
@@ -1168,16 +1175,6 @@
         </div>
         <div>
           <div class="form-group">
-            <label class="form-label">リピート/スポット</label>
-            <select class="form-control" id="prospect-contract-type">
-              <option value="">未設定</option>
-              <option value="リピート">リピート</option>
-              <option value="スポット">スポット</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div class="form-group">
             <label class="form-label">重要度</label>
             <select class="form-control" id="prospect-importance">
               <option value="">未設定</option>
@@ -1185,18 +1182,6 @@
               <option value="B">B：重要</option>
               <option value="C">C：通常</option>
             </select>
-          </div>
-        </div>
-        <div>
-          <div class="form-group">
-            <label class="form-label">市場規模</label>
-            <select class="form-control" id="prospect-market-size">
-              <option value="">未設定</option>
-              <option value="A">大</option>
-              <option value="B">中</option>
-              <option value="C">小</option>
-            </select>
-            <div class="form-hint">新規はおおよその規模、保持は案件金額（大：1000万超／中：300〜1000万／小：300万未満）で判断</div>
           </div>
         </div>
         <div class="span-2">
@@ -1306,6 +1291,60 @@
   </div>
 </div>
 
+<!-- ===== ガイドライン（入力ルール）モーダル ===== -->
+<!-- 案件登録モーダルの上からも開けるよう、z-index を高くしている -->
+<div class="modal-overlay" id="guide-modal" style="z-index:210" onclick="if(event.target===this)closeModal('guide-modal')">
+  <div class="modal guide-modal">
+    <div class="modal-header">
+      <span class="modal-title">📘 ガイドライン（入力ルール）</span>
+      <button class="modal-close" onclick="closeModal('guide-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="guide-section">
+        <h3>案件の登録</h3>
+        <dl>
+          <dt>得意先</dt>
+          <dd>
+            販売管理に登録されている得意先を、<strong>表示される候補の中から選んでください</strong>。文字を入力しただけでは選んだことになりません。<br>
+            得意先として確定していない場合（噂話の段階など）は「未納入客先」を選び、会社名の目安を案件名に書いてください。
+          </dd>
+          <dt>案件担当</dt>
+          <dd>
+            <strong>未設定のまま登録してください</strong>。担当課長が担当者を設定します。<br>
+            登録する人が担当課長本人の場合は、そのまま担当者を設定して構いません。
+          </dd>
+          <dt>案件種別</dt>
+          <dd>
+            1つ選んでください。複数の業務にまたがる場合（例：熱源空調設備工事＋分析）は、<strong>主となる業務を選び、ほかの業務は備考に書いてください</strong>。<br>
+            どんな仕事になるかまだはっきりしない場合（工場の建設予定がある程度の段階など）は、<strong>未選択のまま登録</strong>し、分かった時点で選んでください。
+          </dd>
+          <dt>受注見込み時期</dt>
+          <dd>当てはまるものの中で、一番近いものを選んでください。</dd>
+        </dl>
+      </div>
+
+      <div class="guide-section">
+        <h3>ステータス「8. 失注」と「9. 対象外」の使い分け</h3>
+        <dl>
+          <dt><span class="badge status-8">失注</span></dt>
+          <dd>提案・見積をしたが、受注できなかった案件（他社に決まった、価格で負けた など）。</dd>
+          <dt><span class="badge status-9">対象外</span></dt>
+          <dd>案件そのものがなくなった、または当社の仕事にならない案件（計画が中止になった、当社では対応できない内容だった、重複して登録した など）。</dd>
+        </dl>
+        <div class="guide-note">
+          迷ったときは「<strong>提案・見積をしたかどうか</strong>」で判断してください。提案・見積をした後に受注できなかった場合は、理由にかかわらず「失注」です。<br>
+          失注・対象外にするときは、理由を活動記録か備考に残してください。
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('guide-modal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== Supabase初期化 =====
 const SUPABASE_URL = 'https://kvlzcqohbtvryyvkezeh.supabase.co';
@@ -1334,7 +1373,6 @@ let selectedProspectId = null;
 let meetingDeptSectionMap = {};
 let meetingAmountSort = null; // null | 'asc' | 'desc'
 let meetingLastSort = null; // null | 'asc'(古い順) | 'desc'(新しい順)
-let prospectAssignedAuto = false; // 案件担当が「得意先の担当営業からの自動セット」のままか
 let showUnassignedProspects = false;
 let showUnassignedMeeting = false;
 let companySortKey = 'name';
@@ -1485,7 +1523,6 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
               </div>
               <div class="prospect-item-meta">
                 ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
-                ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
                 ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
               </div>
             </div>
@@ -1707,7 +1744,6 @@ function renderProspects() {
       <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="${p.users?.name ? 'color:var(--text-faint)' : 'color:var(--danger);font-weight:600'}">担当：${esc(p.users?.name || '未設定')}</span></div>
       <div class="prospect-item-meta">
         ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
-        ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
         ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
         ${p.timing_label ? `<span style="font-size:11px;color:var(--text-faint)">${esc(p.timing_label)}</span>` : ''}
       </div>
@@ -1741,7 +1777,6 @@ async function selectProspect(id) {
       <div class="detail-meta" style="margin-top:6px">
         <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
         ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
-        ${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : ''}
       </div>
     </div>
     <div class="detail-body">
@@ -1761,10 +1796,6 @@ async function selectProspect(id) {
         <div class="info-row">
           <div class="info-cell-label">新規/保持</div>
           <div class="info-cell-value">${esc(p.prospect_type || '—')}</div>
-        </div>
-        <div class="info-row">
-          <div class="info-cell-label">市場規模</div>
-          <div class="info-cell-value">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</div>
         </div>
         <div class="info-row">
           <div class="info-cell-label">重要度</div>
@@ -1873,14 +1904,11 @@ async function openProspectModal() {
   document.getElementById('prospect-category').value = '';
   document.getElementById('prospect-amount').value = '';
   document.getElementById('prospect-type').value = '';
-  document.getElementById('prospect-contract-type').value = '';
   document.getElementById('prospect-importance').value = '';
-  document.getElementById('prospect-market-size').value = '';
   document.getElementById('prospect-timing-label').value = '';
   document.getElementById('prospect-notes').value = '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
-  prospectAssignedAuto = false;
   const assignedInfo = document.getElementById('prospect-company-assigned-name');
   if (assignedInfo) assignedInfo.textContent = '得意先を選択すると表示されます';
   // 活動履歴と同じ方式：最初から全員表示
@@ -1915,16 +1943,13 @@ async function editProspect(id) {
   document.getElementById('prospect-category').value = cat;
   document.getElementById('prospect-amount').value = p.expected_amount || '';
   document.getElementById('prospect-type').value = p.prospect_type || '';
-  document.getElementById('prospect-contract-type').value = p.contract_type || '';
   document.getElementById('prospect-importance').value = p.importance || '';
-  document.getElementById('prospect-market-size').value = p.market_size || '';
   document.getElementById('prospect-timing-label').value = p.timing_label || '';
   document.getElementById('prospect-notes').value = p.notes || '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', p.company_id);
-  prospectAssignedAuto = false;
   setSelectedUser('prospect-assigned-to', p.assigned_to);
-  presetAssignedFromCompany({ fill: false });
+  presetAssignedFromCompany();
   openModal('prospect-modal');
 }
 
@@ -1944,9 +1969,8 @@ async function saveProspect() {
       expected_amount: document.getElementById('prospect-amount').value || null,
       assigned_to: getSelectedUserId('prospect-assigned-to') || null,
       prospect_type: document.getElementById('prospect-type').value || null,
-      contract_type: document.getElementById('prospect-contract-type').value || null,
+      // contract_type（リピート/スポット）・market_size（市場規模）は画面から外した。既存データを消さないよう、ここでは送らない
       importance: document.getElementById('prospect-importance').value || null,
-      market_size: document.getElementById('prospect-market-size').value || null,
       timing_label: document.getElementById('prospect-timing-label').value || null,
       notes: document.getElementById('prospect-notes').value.trim() || null,
       updated_at: new Date().toISOString()
@@ -1961,10 +1985,10 @@ async function saveProspect() {
       const newStatus = parseInt(document.getElementById('prospect-status').value);
       ({ error } = await db.from('prospects').update(data).eq('id', editId));
       if (!error && oldProspect && oldProspect.status !== newStatus) {
-        const assignedTo = getSelectedUserId('prospect-assigned-to') || null;
+        // 変更者は「操作したログイン中の本人」を記録する（案件担当ではない）
         await db.from('prospect_histories').insert({
           prospect_id: editId,
-          changed_by: assignedTo,
+          changed_by: currentUser?.id || null,
           status_from: oldProspect.status,
           status_to: newStatus
         });
@@ -1975,10 +1999,9 @@ async function saveProspect() {
       inserted = insertedData;
       error = insertError;
       if (!error && inserted) {
-        const assignedTo = getSelectedUserId('prospect-assigned-to') || null;
         await db.from('prospect_histories').insert({
           prospect_id: inserted.id,
-          changed_by: assignedTo,
+          changed_by: currentUser?.id || null,
           status_from: null,
           status_to: data.status
         });
@@ -2277,7 +2300,9 @@ async function loadCompanySelect(selectId, selectedId) {
   input.className = 'form-control';
   input.id = selectId + '-input';
   input.placeholder = '会社名を入力して検索...';
-  input.autocomplete = 'off';
+  input.setAttribute('autocomplete', 'off');
+  // ブラウザの入力候補（オートコンプリート）が出ないよう、name を毎回ちがう値にする
+  input.name = selectId + '-search-' + Date.now();
   if (companySelections[selectId]) input.value = companySelections[selectId].name;
 
   const dropdown = document.createElement('div');
@@ -2289,6 +2314,14 @@ async function loadCompanySelect(selectId, selectedId) {
   if (sel) sel.parentNode.insertBefore(wrapper, sel);
 
   input.addEventListener('input', () => {
+    // 選んだ後に文字を書き換えたら「選択済み」を解除する。
+    // （解除しないと、表示されている会社名と保存される得意先が食い違う）
+    const current = companySelections[selectId];
+    if (current && input.value !== current.name) {
+      companySelections[selectId] = null;
+      if (selectId === 'prospect-company') presetAssignedFromCompany();
+      if (selectId === 'activity-company') loadProspectsForActivity();
+    }
     const q = input.value.toLowerCase();
     if (q.length < 1) { dropdown.style.display = 'none'; return; }
     const filtered = companies.filter(c => c.name.toLowerCase().includes(q)).slice(0, 20);
@@ -2300,6 +2333,15 @@ async function loadCompanySelect(selectId, selectedId) {
       </div>
     `).join('');
     dropdown.style.display = 'block';
+  });
+
+  // 候補から選ばずに入力を終えても、会社名が1社と完全に一致すれば選んだものとして扱う
+  // （ブラウザの入力候補で会社名が入った場合の救済）
+  input.addEventListener('change', () => {
+    if (companySelections[selectId]) return;
+    const name = input.value.trim();
+    const hits = companies.filter(c => c.name === name);
+    if (hits.length === 1) selectCompanyOption(selectId, hits[0].id, hits[0].name);
   });
 
   input.addEventListener('blur', () => {
@@ -2321,10 +2363,9 @@ function selectCompanyOption(selectId, id, name) {
   if (selectId === 'activity-company') loadProspectsForActivity();
 }
 
-// 得意先を選んだとき：得意先の担当営業を表示し、案件担当が「空欄」または「前回の自動セットのまま」なら初期値として入れる。
-// 手動で選んだ案件担当や、既存案件の案件担当は上書きしない。（opts.fill=false：表示だけ更新）
-async function presetAssignedFromCompany(opts = {}) {
-  const fill = opts.fill !== false;
+// 得意先を選んだとき：得意先の担当営業を参考として表示するだけ。
+// 案件担当は自動では入れない（未設定で登録し、担当課長が設定する運用）。
+async function presetAssignedFromCompany() {
   const companyId = getSelectedCompanyId('prospect-company');
   const nameEl = document.getElementById('prospect-company-assigned-name');
 
@@ -2343,18 +2384,6 @@ async function presetAssignedFromCompany(opts = {}) {
   const repId = company?.assigned_to || '';
   const repUser = repId ? users.find(u => u.id === repId) : null;
   if (nameEl) nameEl.textContent = repUser ? repUser.name : '未設定';
-
-  if (!fill) return;
-  const current = getSelectedUserId('prospect-assigned-to');
-  if (!current || prospectAssignedAuto) {
-    if (repUser) {
-      setSelectedUser('prospect-assigned-to', repId);
-      prospectAssignedAuto = true;
-    } else {
-      setSelectedUser('prospect-assigned-to', '');
-      prospectAssignedAuto = false;
-    }
-  }
 }
 
 function showAlert(containerId, msg, type) {
@@ -2455,14 +2484,6 @@ async function loadMeeting() {
     typeContainer.innerHTML = ['新規','保持'].map(t =>
       `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-type-cb" value="${t}" onchange="filterMeeting()" checked> ${t}</label>`
     ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-type-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
-  }
-
-  // リピート/スポットチェックボックス
-  const contractContainer = document.getElementById('meeting-contract-cbs');
-  if (contractContainer) {
-    contractContainer.innerHTML = ['リピート','スポット'].map(c =>
-      `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-contract-cb" value="${c}" onchange="filterMeeting()" checked> ${c}</label>`
-    ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-contract-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
   // 担当部・担当課を動的生成（部→課の対応関係も保持）
@@ -2581,15 +2602,14 @@ function filterMeeting() {
     const matchStatus = !statusSel || p.status.toString() === statusSel;
     const matchImportance = filterState.imp.size === 0 || filterState.imp.has(p.importance);
     const pCats = (p.prospect_categories||[]).map(c=>c.category);
-    const matchCategory = !categorySel || pCats.includes(categorySel);
-    const matchContract = filterState.contract.size === 0 || filterState.contract.has(p.contract_type);
+    const matchCategory = !categorySel || (categorySel === '__none__' ? pCats.length === 0 : pCats.includes(categorySel));
     const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
     const matchDept = !deptSel || p.users?.department === deptSel;
     const matchSection = !sectionSel || p.users?.section === sectionSel;
     const matchMine = !showMyMeeting || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedMeeting || !p.assigned_to;
-    return matchStatus && matchImportance && matchCategory && matchContract && matchAssigned && matchType && matchDept && matchSection && matchMine && matchUnassigned;
+    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchDept && matchSection && matchMine && matchUnassigned;
   });
 
   filtered.sort((a, b) => {
@@ -2618,7 +2638,7 @@ function filterMeeting() {
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="14" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -2631,10 +2651,8 @@ function filterMeeting() {
     return `<tr style="font-size:12px">
       <td style="text-align:center">${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : '—'}</td>
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
-      <td style="text-align:center;color:var(--text-muted)">${p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '—'}</td>
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
       <td style="color:var(--text-muted);font-size:12px">${esc(p.prospect_type || '—')}</td>
-      <td>${p.contract_type ? `<span class="badge ${p.contract_type === 'リピート' ? 'contract-repeat' : 'contract-spot'}">${esc(p.contract_type)}</span>` : '—'}</td>
       <td style="color:var(--text-muted)">${[...new Set((p.prospect_categories || []).map(c => c.category))].join('・') || '—'}</td>
       <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
       <td>${p.users?.name ? `<span style="color:var(--text-muted)">${esc(p.users.name)}</span>` : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</td>
@@ -2652,16 +2670,13 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['重要度','得意先','市場規模','案件名','新規/保持','リピート/スポット','種別','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額'];
+  const headers = ['重要度','得意先','案件名','新規/保持','種別','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額'];
   const rows = getFilteredMeetingData().map(p => {
-    const marketSize = p.market_size === 'A' ? '大' : p.market_size === 'B' ? '中' : p.market_size === 'C' ? '小' : '';
     return [
       p.importance || '',
       p.companies?.name || '',
-      marketSize,
       p.title,
       p.prospect_type || '',
-      p.contract_type || '',
       [...new Set((p.prospect_categories||[]).map(c=>c.category))].join('・') || '',
       p.users?.section || '',
       p.users?.name || '',
@@ -2758,7 +2773,7 @@ function formatTiming(p) {
 
 
 // ===== サマリーフィルターボタン =====
-const filterState = { imp: new Set(), type: new Set(), contract: new Set() };
+const filterState = { imp: new Set(), type: new Set() };
 
 function toggleFilterBtn(group, value) {
   const btn = document.getElementById(`${group}-btn-${value}`);
@@ -2786,7 +2801,7 @@ function resetMeetingFilters() {
   // 担当者検索
   document.getElementById('meeting-assigned-search').value = '';
   // ボタンフィルター
-  ['imp','type','contract'].forEach(group => {
+  ['imp','type'].forEach(group => {
     filterState[group].forEach(val => {
       const btn = document.getElementById(`${group}-btn-${val}`);
       if (btn) {
@@ -2896,7 +2911,6 @@ function searchUsersForSelect(selectId, query) {
 }
 
 function selectUserForSelect(selectId, id, name) {
-  if (selectId === 'prospect-assigned-to') prospectAssignedAuto = false;
   document.getElementById(selectId + '-user-input').value = id ? name : '';
   document.getElementById(selectId + '-user-id').value = id;
   const dd = document.getElementById(selectId + '-user-dropdown');

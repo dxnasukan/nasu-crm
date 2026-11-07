@@ -1662,7 +1662,7 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
                 <span class="activity-card-date">${esc(a.activity_date)}</span>
                 <div style="display:flex;gap:6px;align-items:center">
                   ${a.activity_type ? `<span class="activity-card-type">${esc(ACTIVITY_TYPE_LABELS[a.activity_type] || a.activity_type)}</span>` : ''}
-                  <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>
+                  ${canEditActivity(a) ? `<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>` : ''}
                 </div>
               </div>
               <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
@@ -1678,7 +1678,7 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
                     <span class="activity-card-date">${esc(a.activity_date)}</span>
                     <div style="display:flex;gap:6px;align-items:center">
                       ${a.activity_type ? `<span class="activity-card-type">${esc(ACTIVITY_TYPE_LABELS[a.activity_type] || a.activity_type)}</span>` : ''}
-                      <button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>
+                      ${canEditActivity(a) ? `<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="editActivity('${a.id}')">編集</button>` : ''}
                     </div>
                   </div>
                   <div class="activity-card-summary" style="white-space:pre-wrap">${escNl(a.summary)}</div>
@@ -2004,7 +2004,7 @@ async function selectProspect(id) {
                 <span class="activity-card-date">${esc(a.activity_date)}</span>
                 <div style="display:flex;gap:6px;align-items:center">
                   ${a.activity_type ? `<span class="activity-card-type">${esc(ACTIVITY_TYPE_LABELS[a.activity_type] || a.activity_type)}</span>` : ''}
-                  ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>` : ''}
+                  ${canEditActivity(a) ? `<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();editActivity('${a.id}')">編集</button>` : ''}
                   ${canDeleteActivity(a) ? `<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px" onclick="event.stopPropagation();deleteActivity('${a.id}')">削除</button>` : ''}
                 </div>
               </div>
@@ -2261,7 +2261,7 @@ function renderActivities() {
       </td>
       <td style="color:var(--text-muted);font-size:12px">${esc(a.users?.name || '—')}</td>
       <td>
-        ${(currentUserProfile?.role === 'admin' || a.assigned_to === currentUser?.id) ? `<button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>` : ''}
+        ${canEditActivity(a) ? `<button class="btn btn-ghost btn-sm" onclick="editActivity('${a.id}')">編集</button>` : ''}
         ${canDeleteActivity(a) ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteActivity('${a.id}')">削除</button>` : ''}
       </td>
     </tr>
@@ -3224,10 +3224,11 @@ async function deleteProspect(id) {
   document.getElementById('prospect-detail').innerHTML = '<div class="empty"><div class="empty-text">案件を選択してください</div></div>';
 }
 
-// 活動記録を削除できるのは、管理者と、その活動を記録した本人（担当者）
-function canDeleteActivity(a) {
+// 活動記録を編集・削除できるのは、管理者と、その活動を記録した本人（担当者）
+function canEditActivity(a) {
   return currentUserProfile?.role === 'admin' || (!!currentUser?.id && a.assigned_to === currentUser.id);
 }
+function canDeleteActivity(a) { return canEditActivity(a); }
 
 async function deleteActivity(id) {
   if (!confirm('この活動履歴を削除しますか？')) return;

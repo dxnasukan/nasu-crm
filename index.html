@@ -420,19 +420,20 @@
     #meeting-table .badge-importance { width: 16px !important; height: 16px !important; font-size: 9px !important; }
     #meeting-table tr { page-break-inside: avoid; }
     #meeting-table thead { display: table-header-group; } /* 2ページ目以降にも見出しを出す */
-    /* 列幅（合計100%）：重要度・得意先・案件名・新規/保持・種別・担当課・案件担当・ステータス・最終活動・直近変更・受注見込み時期・見込み額 */
+    /* 列幅（合計100%）：重要度・得意先・案件名・新規/保持・種別・本支店・担当課・案件担当・ステータス・最終活動・直近変更・受注見込み時期・見込み額 */
     #meeting-table th:nth-child(1)  { width: 4% !important; }
-    #meeting-table th:nth-child(2)  { width: 13% !important; }
-    #meeting-table th:nth-child(3)  { width: 18% !important; }
-    #meeting-table th:nth-child(4)  { width: 5% !important; }
-    #meeting-table th:nth-child(5)  { width: 8% !important; }
-    #meeting-table th:nth-child(6)  { width: 8% !important; }
+    #meeting-table th:nth-child(2)  { width: 12% !important; }
+    #meeting-table th:nth-child(3)  { width: 17% !important; }
+    #meeting-table th:nth-child(4)  { width: 4% !important; }
+    #meeting-table th:nth-child(5)  { width: 7% !important; }
+    #meeting-table th:nth-child(6)  { width: 6% !important; }
     #meeting-table th:nth-child(7)  { width: 7% !important; }
-    #meeting-table th:nth-child(8)  { width: 8% !important; }
-    #meeting-table th:nth-child(9)  { width: 6% !important; }
-    #meeting-table th:nth-child(10) { width: 9% !important; }
-    #meeting-table th:nth-child(11) { width: 6% !important; }
-    #meeting-table th:nth-child(12) { width: 8% !important; }
+    #meeting-table th:nth-child(8)  { width: 6% !important; }
+    #meeting-table th:nth-child(9)  { width: 8% !important; }
+    #meeting-table th:nth-child(10) { width: 6% !important; }
+    #meeting-table th:nth-child(11) { width: 9% !important; }
+    #meeting-table th:nth-child(12) { width: 6% !important; }
+    #meeting-table th:nth-child(13) { width: 8% !important; }
     .print-header { display: block !important; }
     #meeting-summary-bar { display: none !important; } /* 件数・合計は印刷用の見出しに出しているので重複させない */
     .mf-chip-x, .mf-clear-all { display: none !important; }
@@ -605,6 +606,8 @@
   .mf-chip-x:hover { background: var(--bg); color: var(--danger); }
   .mf-clear-all { margin-left: auto; border: none; background: none; cursor: pointer; color: var(--link); font-size: 12px; }
   .mf-clear-all:hover { text-decoration: underline; }
+  .amount-cont { display: inline-block; padding: 0 5px; margin-left: 2px; border-radius: 3px; background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 600; white-space: nowrap; vertical-align: 1px; }
+  .branch-tag { display: inline-block; padding: 0 6px; border-radius: 3px; background: var(--bg); color: var(--text-muted); font-size: 11px; white-space: nowrap; }
 
   /* 入力ルール（社内の「運用ガイドライン」（Word）と混同しないよう、画面上の名前は「入力ルール」に統一） */
   .guide-link { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; margin-right: 12px; white-space: nowrap; }
@@ -828,6 +831,14 @@
             </div>
             <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
             <button class="btn btn-secondary" id="prospect-mysection-btn" onclick="toggleMySection()" style="white-space:nowrap">自分の課</button>
+            <select class="form-control" id="prospect-branch-filter" onchange="filterProspects()" style="width:auto">
+              <option value="">本支店（全て）</option>
+              <option value="本社">本社</option>
+              <option value="福島支店">福島支店</option>
+              <option value="埼玉支店">埼玉支店</option>
+              <option value="つくば出張所">つくば出張所</option>
+              <option value="__none__">本支店 未設定</option>
+            </select>
             <select class="form-control" id="prospect-section-filter" onchange="filterProspects()" style="width:auto;max-width:190px"><option value="">部・課（全て）</option></select>
             <button class="btn btn-secondary" id="prospect-unassigned-btn" onclick="toggleUnassignedProspects()" style="white-space:nowrap">担当未設定</button>
             <select class="form-control" id="prospect-status-filter" onchange="filterProspects()" style="width:auto">
@@ -978,6 +989,19 @@
               </div>
             </div>
 
+            <!-- 本支店区分 -->
+            <div class="mf-item">
+              <span class="mf-label">本支店</span>
+              <select id="meeting-branch-select" onchange="filterMeeting()" class="form-control mf-select" style="width:116px">
+                <option value="">すべて</option>
+                <option value="本社">本社</option>
+                <option value="福島支店">福島支店</option>
+                <option value="埼玉支店">埼玉支店</option>
+                <option value="つくば出張所">つくば出張所</option>
+                <option value="__none__">未設定</option>
+              </select>
+            </div>
+
             <!-- 部・課（部全体／課を1つにまとめた選択） -->
             <div class="mf-item">
               <span class="mf-label">部・課</span>
@@ -1020,6 +1044,7 @@
                 <th style="min-width:140px">案件名</th>
                 <th style="width:56px;text-align:center">新規/保持</th>
                 <th style="min-width:80px">種別</th>
+                <th style="width:72px">本支店</th>
                 <th style="width:72px">担当課</th>
                 <th style="width:72px">案件担当</th>
                 <th style="width:88px;text-align:center">ステータス</th>
@@ -1030,7 +1055,7 @@
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="12" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="13" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1178,7 +1203,13 @@
         <div>
           <div class="form-group">
             <label class="form-label">見込み金額（円）</label>
-            <input type="number" class="form-control" id="prospect-amount" placeholder="0">
+            <div style="display:flex;gap:6px">
+              <input type="number" class="form-control" id="prospect-amount" placeholder="0" style="flex:1;min-width:0">
+              <select class="form-control" id="prospect-amount-type" style="width:86px;flex:none" title="継続して契約する業務は年額で入力し「継続」を選ぶ">
+                <option value="単発">単発</option>
+                <option value="継続">継続/年</option>
+              </select>
+            </div>
           </div>
         </div>
         <div>
@@ -1217,7 +1248,19 @@
             </select>
           </div>
         </div>
-        <div class="span-2">
+        <div>
+          <div class="form-group">
+            <label class="form-label">本支店区分 *</label>
+            <select class="form-control" id="prospect-branch">
+              <option value="">選択してください</option>
+              <option value="本社">本社</option>
+              <option value="福島支店">福島支店</option>
+              <option value="埼玉支店">埼玉支店</option>
+              <option value="つくば出張所">つくば出張所</option>
+            </select>
+          </div>
+        </div>
+        <div>
           <div class="form-group">
             <label class="form-label">案件担当</label>
             <div style="position:relative">
@@ -1352,6 +1395,11 @@
             1つ選んでください。複数の業務にまたがる場合（例：熱源空調設備工事＋分析）は、<strong>主となる業務を選び、ほかの業務は備考に書いてください</strong>。<br>
             どんな仕事になるかまだはっきりしない場合（工場の建設予定がある程度の段階など）は、<strong>未選択のまま登録</strong>し、分かった時点で選んでください。
           </dd>
+          <dt>見込み金額</dt>
+          <dd>
+            わかる範囲で入力してください（わからなくても登録できます）。<br>
+            ビル管理や定期の分析など、<strong>継続して契約する業務は「年額」で入力し、「継続/年」を選んでください</strong>（例：月15万円なら 1,800,000）。
+          </dd>
           <dt>受注見込み時期</dt>
           <dd>当てはまるものの中で、一番近いものを選んでください。</dd>
           <dt>新規/保持</dt>
@@ -1359,9 +1407,11 @@
             <strong>新規</strong>：新規開拓の案件。<br>
             <strong>保持</strong>：すでに取引のある得意先の中で、新しく取りにいく案件（保持内開拓）。今ある取引をそのまま続けるだけのものは入れません。
           </dd>
+          <dt>本支店区分</dt>
+          <dd>案件を受け持つ本支店（本社／福島支店／埼玉支店／つくば出張所）を<strong>必ず選んでください</strong>。この区分の担当課長が、案件担当を設定します。</dd>
           <dt>案件担当</dt>
           <dd>
-            <strong>未設定のまま登録してください</strong>。担当課長が担当者を設定します。<br>
+            <strong>未設定のまま登録してください</strong>。本支店区分の担当課長が担当者を設定します。<br>
             登録する人が担当課長本人の場合は、そのまま担当者を設定して構いません。
           </dd>
         </dl>
@@ -1565,7 +1615,7 @@ ${currentUserProfile?.role === 'admin' ? `<button class="btn btn-secondary btn-s
               </div>
               <div class="prospect-item-meta">
                 ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
-                ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
+                ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">${formatAmountHtml(p)}</span>` : ''}
               </div>
             </div>
           `).join('')
@@ -1730,6 +1780,12 @@ function matchDeptSection(key, user) {
   return s === '*' ? ud === d : (ud === d && us === s);
 }
 
+// 本支店区分の絞り込み（'__none__' は未設定の案件）
+function matchBranchFilter(sel, p) {
+  if (!sel) return true;
+  return sel === '__none__' ? !p.branch : p.branch === sel;
+}
+
 function deptSectionLabel(key) {
   const [d, s] = key.split('||');
   return s === '*' ? d + '（全体）' : [d, s].filter(Boolean).join('　');
@@ -1770,6 +1826,7 @@ function clearProspectFilters() {
   document.getElementById('prospect-search').value = '';
   document.getElementById('prospect-status-filter').value = '';
   document.getElementById('prospect-section-filter').value = '';
+  document.getElementById('prospect-branch-filter').value = '';
   showMyProspects = false;
   showUnassignedProspects = false;
   setToggleBtn('prospect-mine-btn', false);
@@ -1781,6 +1838,7 @@ function renderProspects() {
   const search = document.getElementById('prospect-search').value.toLowerCase();
   const status = document.getElementById('prospect-status-filter').value;
   const sectionKey = document.getElementById('prospect-section-filter')?.value || '';
+  const branchSel = document.getElementById('prospect-branch-filter')?.value || '';
   const myKey = myProspectSectionKey();
   setToggleBtn('prospect-mysection-btn', !!myKey && sectionKey === myKey);
 
@@ -1790,7 +1848,8 @@ function renderProspects() {
     const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedProspects || !p.assigned_to;
     const matchSection = matchDeptSection(sectionKey, p.users);
-    return matchSearch && matchStatus && matchMine && matchUnassigned && matchSection;
+    const matchBranch = matchBranchFilter(branchSel, p);
+    return matchSearch && matchStatus && matchMine && matchUnassigned && matchSection && matchBranch;
   });
 
   const list = document.getElementById('prospect-list');
@@ -1799,6 +1858,7 @@ function renderProspects() {
     const conds = [];
     if (search) conds.push('検索：' + document.getElementById('prospect-search').value);
     if (status) conds.push('ステータス：' + (STATUS_LABELS[status] || status));
+    if (branchSel) conds.push('本支店：' + (branchSel === '__none__' ? '未設定' : branchSel));
     if (sectionKey) conds.push('部・課：' + deptSectionLabel(sectionKey));
     if (showMyProspects) conds.push('自分の担当');
     if (showUnassignedProspects) conds.push('担当未設定');
@@ -1817,7 +1877,8 @@ function renderProspects() {
       <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="${p.users?.name ? 'color:var(--text-faint)' : 'color:var(--danger);font-weight:600'}">担当：${esc(p.users?.name || '未設定')}</span></div>
       <div class="prospect-item-meta">
         ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
-        ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">¥${Number(p.expected_amount).toLocaleString()}</span>` : ''}
+        ${p.branch ? `<span class="branch-tag">${esc(p.branch)}</span>` : ''}
+        ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">${formatAmountHtml(p)}</span>` : ''}
         ${p.timing_label ? `<span style="font-size:11px;color:var(--text-faint)">${esc(p.timing_label)}</span>` : ''}
       </div>
     </div>
@@ -1855,12 +1916,16 @@ async function selectProspect(id) {
     <div class="detail-body">
       <div class="info-grid-2col">
         <div class="info-row">
+          <div class="info-cell-label">本支店区分</div>
+          <div class="info-cell-value">${p.branch ? esc(p.branch) : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</div>
+        </div>
+        <div class="info-row">
           <div class="info-cell-label">案件担当</div>
           <div class="info-cell-value">${esc(p.users?.name || '未設定')}${p.users?.department ? `<span style="font-size:11px;color:var(--text-muted)">（${p.users.department}）</span>` : ''}</div>
         </div>
         <div class="info-row">
           <div class="info-cell-label">見込み金額</div>
-          <div class="info-cell-value amount" style="font-weight:600">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</div>
+          <div class="info-cell-value amount" style="font-weight:600">${formatAmountHtml(p)}</div>
         </div>
         <div class="info-row">
           <div class="info-cell-label">得意先</div>
@@ -1976,6 +2041,8 @@ async function openProspectModal() {
   document.getElementById('prospect-status').value = '1';
   document.getElementById('prospect-category').value = '';
   document.getElementById('prospect-amount').value = '';
+  document.getElementById('prospect-amount-type').value = '単発';
+  document.getElementById('prospect-branch').value = '';
   document.getElementById('prospect-type').value = '';
   document.getElementById('prospect-importance').value = '';
   document.getElementById('prospect-timing-label').value = '';
@@ -2015,6 +2082,8 @@ async function editProspect(id) {
   const cat = (p.prospect_categories || [])[0]?.category || '';
   document.getElementById('prospect-category').value = cat;
   document.getElementById('prospect-amount').value = p.expected_amount || '';
+  document.getElementById('prospect-amount-type').value = p.amount_type || '単発';
+  document.getElementById('prospect-branch').value = p.branch || '';
   document.getElementById('prospect-type').value = p.prospect_type || '';
   document.getElementById('prospect-importance').value = p.importance || '';
   document.getElementById('prospect-timing-label').value = p.timing_label || '';
@@ -2034,12 +2103,16 @@ async function saveProspect() {
     const companyId = getSelectedCompanyId('prospect-company');
     if (!title) { showAlert('prospect-modal-alert', '案件名は必須です', 'error'); return; }
     if (!companyId) { showAlert('prospect-modal-alert', '得意先を選択してください（候補から選択）', 'error'); return; }
+    const branch = document.getElementById('prospect-branch').value;
+    if (!branch) { showAlert('prospect-modal-alert', '本支店区分を選択してください', 'error'); return; }
 
     const data = {
       title,
       company_id: companyId,
+      branch,
       status: parseInt(document.getElementById('prospect-status').value),
       expected_amount: document.getElementById('prospect-amount').value || null,
+      amount_type: document.getElementById('prospect-amount-type').value || '単発',
       assigned_to: getSelectedUserId('prospect-assigned-to') || null,
       prospect_type: document.getElementById('prospect-type').value || null,
       // contract_type（リピート/スポット）・market_size（市場規模）は画面から外した。既存データを消さないよう、ここでは送らない
@@ -2498,6 +2571,8 @@ function getMeetingActiveFilters() {
   if (document.getElementById('meeting-category-select').value)
     add('種別：' + selText('meeting-category-select'), () => { document.getElementById('meeting-category-select').value = ''; filterMeeting(); });
   [...filterState.type].forEach(v => add(v, () => toggleFilterBtn('type', v)));
+  if (document.getElementById('meeting-branch-select').value)
+    add('本支店：' + selText('meeting-branch-select'), () => { document.getElementById('meeting-branch-select').value = ''; filterMeeting(); });
   if (document.getElementById('meeting-section-select').value)
     add('部・課：' + deptSectionLabel(document.getElementById('meeting-section-select').value), () => { document.getElementById('meeting-section-select').value = ''; filterMeeting(); });
   const name = document.getElementById('meeting-assigned-search').value.trim();
@@ -2685,6 +2760,7 @@ function filterMeeting() {
   const statusSel = document.getElementById('meeting-status-select')?.value || '';
   const categorySel = document.getElementById('meeting-category-select')?.value || '';
   const sectionKey = document.getElementById('meeting-section-select')?.value || '';
+  const branchSel = document.getElementById('meeting-branch-select')?.value || '';
   const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
 
   let filtered = meetingProspects.filter(p => {
@@ -2696,7 +2772,8 @@ function filterMeeting() {
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
     const matchSection = matchDeptSection(sectionKey, p.users);
     const matchUnassigned = !showUnassignedMeeting || !p.assigned_to;
-    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchSection && matchUnassigned;
+    const matchBranch = matchBranchFilter(branchSel, p);
+    return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchBranch && matchSection && matchUnassigned;
   });
 
   filtered.sort((a, b) => {
@@ -2719,13 +2796,13 @@ function filterMeeting() {
 
   meetingFiltered = filtered;
 
-  const totalAmount = filtered.reduce((sum, p) => sum + (Number(p.expected_amount) || 0), 0);
   document.getElementById('meeting-count').textContent = `${filtered.length}件`;
-  document.getElementById('meeting-total-amount').textContent = totalAmount > 0 ? `見込み合計：¥${totalAmount.toLocaleString()}` : '';
+  // 見込み合計は、単発と継続（年額）が混ざると意味のない数字になるため、重要度の定義が決まるまで出さない
+  document.getElementById('meeting-total-amount').textContent = '';
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
@@ -2741,13 +2818,14 @@ function filterMeeting() {
       <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
       <td style="color:var(--text-muted);font-size:12px">${esc(p.prospect_type || '—')}</td>
       <td style="color:var(--text-muted)">${[...new Set((p.prospect_categories || []).map(c => c.category))].join('・') || '—'}</td>
+      <td>${p.branch ? esc(p.branch) : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</td>
       <td style="color:var(--text-muted)">${esc(p.users?.section || '—')}</td>
       <td>${p.users?.name ? `<span style="color:var(--text-muted)">${esc(p.users.name)}</span>` : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
       <td>${lastMoveHtml(p)}</td>
       <td>${latestChangeHtml}</td>
       <td style="color:var(--text-muted)">${formatTiming(p)}</td>
-      <td style="text-align:right" class="amount">${p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '—'}</td>
+      <td style="text-align:right" class="amount">${formatAmountHtml(p).replace(' <span', '<br><span')}</td>
     </tr>`;
   }).join('');
 }
@@ -2757,7 +2835,7 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['重要度','得意先','案件名','新規/保持','種別','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額'];
+  const headers = ['重要度','得意先','案件名','新規/保持','種別','本支店区分','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額','金額区分'];
   const rows = getFilteredMeetingData().map(p => {
     return [
       p.importance || '',
@@ -2765,12 +2843,14 @@ function buildExportRows() {
       p.title,
       p.prospect_type || '',
       [...new Set((p.prospect_categories||[]).map(c=>c.category))].join('・') || '',
+      p.branch || '',
       p.users?.section || '',
       p.users?.name || '',
       STATUS_LABELS[p.status] || '',
       p._lastMove || '',
       formatTiming(p),
-      p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : ''
+      p.expected_amount ? '¥' + Number(p.expected_amount).toLocaleString() : '',
+      p.expected_amount ? (isContinuing(p) ? '継続（年額）' : '単発') : ''
     ];
   });
   return { headers, rows };
@@ -2950,6 +3030,17 @@ function formatTiming(p) {
   return p.timing_label || '—';
 }
 
+// 見込み金額の表示。継続（年額で入力）の案件には「継続/年」の印を付ける
+function isContinuing(p) { return p.amount_type === '継続'; }
+function formatAmountText(p) {
+  if (!p.expected_amount) return '';
+  return '¥' + Number(p.expected_amount).toLocaleString() + (isContinuing(p) ? '（継続/年）' : '');
+}
+function formatAmountHtml(p, empty = '—') {
+  if (!p.expected_amount) return empty;
+  return '¥' + Number(p.expected_amount).toLocaleString() + (isContinuing(p) ? ' <span class="amount-cont">継続/年</span>' : '');
+}
+
 
 
 // ===== サマリーフィルターボタン =====
@@ -2968,6 +3059,7 @@ function resetMeetingFilters() {
   document.getElementById('meeting-status-select').value = '';
   document.getElementById('meeting-category-select').value = '';
   document.getElementById('meeting-section-select').value = '';
+  document.getElementById('meeting-branch-select').value = '';
   // 担当者検索
   document.getElementById('meeting-assigned-search').value = '';
   // ボタンフィルター（重要度・新規/保持・担当未設定）

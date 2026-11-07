@@ -75,7 +75,7 @@
 
 ## 動作確認
 
-- ビルド不要。`index.html` をローカルの静的サーバー（例：`npx serve` や `python -m http.server`）で開けば動く。ただし **接続先は本番の Supabase** なので、ローカル確認でもデータの作成・更新・削除は本番データに反映される点に注意。
+- ビルド不要。`.claude/launch.json` の `local`（`python -m http.server 8000`、http://localhost:8000）で起動し、Claude のアプリ内ブラウザで確認する。ただし **接続先は本番の Supabase** なので、ローカル確認でもデータの作成・更新・削除は本番データに反映される点に注意。
 - パスワードリセット等の `redirectTo` は本番 URL 固定のため、メール経由のフローはローカルでは確認しづらい。
 
 ## Git 運用

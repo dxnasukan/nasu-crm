@@ -23,7 +23,9 @@
 ## 構成
 
 - **`index.html` 1ファイルのみ**（HTML / CSS / JS をすべて内包、約3,250行）。ビルド工程・パッケージ管理・テストはなし。
-- 外部依存：`@supabase/supabase-js@2`（unpkg から CDN 読み込み、メジャーバージョンのみ指定）。
+- 外部依存：
+  - `@supabase/supabase-js@2`（unpkg から CDN 読み込み、メジャーバージョンのみ指定）。
+  - `exceljs@4.4.0`（cdnjs、バージョン固定）。案件会議の「Excelで出力」を押したときだけ読み込む。読み込めないときは従来の HTML 形式 `.xls` で出力する（`exportExcelHtml`）。
 - バックエンド：Supabase（DB・Auth・RLS）。プロジェクト URL は `index.html` 冒頭の `SUPABASE_URL`。
 - 公開 URL：`https://dxnasukan.github.io/nasu-crm`（パスワードリセットの `redirectTo` にも使用）。
 

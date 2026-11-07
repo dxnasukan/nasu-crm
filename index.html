@@ -414,6 +414,9 @@
     th, td { border: 1px solid #ccc !important; }
     .print-header { display: block !important; }
     #meeting-summary-bar { display: block !important; }
+    .mf-chip-x, .mf-clear-all { display: none !important; }
+    .mf-active { padding: 4px 0 !important; background: none !important; }
+    .mf-chip { border: 1px solid #999 !important; background: none !important; color: #000 !important; }
     a { color: inherit !important; text-decoration: none !important; }
   }
   .print-header {
@@ -572,6 +575,15 @@
   .filter-toggle-btn:hover { border-color: var(--accent); }
   .filter-toggle-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
   @media (max-width: 768px) { .mf-panel { padding: 10px 12px; } .mf-row { gap: 8px 12px; } }
+  .mf-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; }
+  #meeting-filter-toggle.open { background: var(--accent-light); border-color: var(--accent); }
+  .mf-active { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 20px; border-bottom: 1px solid var(--border); background: var(--accent-light); font-size: 12px; }
+  .mf-active-label { font-weight: 700; color: var(--link); margin-right: 2px; }
+  .mf-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--accent); color: var(--text); font-size: 12px; white-space: nowrap; }
+  .mf-chip-x { border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: 13px; line-height: 1; padding: 2px 4px; border-radius: 50%; }
+  .mf-chip-x:hover { background: var(--bg); color: var(--danger); }
+  .mf-clear-all { margin-left: auto; border: none; background: none; cursor: pointer; color: var(--link); font-size: 12px; }
+  .mf-clear-all:hover { text-decoration: underline; }
 
   /* 入力ルール（社内の「運用ガイドライン」（Word）と混同しないよう、画面上の名前は「入力ルール」に統一） */
   .guide-link { font-size: 12px; color: var(--link); cursor: pointer; margin-left: auto; margin-right: 12px; white-space: nowrap; }
@@ -876,6 +888,7 @@
         <div class="card-header" id="meeting-toolbar">
           <span class="card-title">案件会議サマリー</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-secondary" id="meeting-filter-toggle" onclick="toggleMeetingFilter()">🔽 絞り込み<span id="meeting-filter-count" class="mf-count" style="display:none"></span></button>
             <div style="position:relative">
               <button class="btn btn-primary" onclick="toggleOutputMenu()">📤 出力 ▾</button>
               <div id="output-menu" style="display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);z-index:200;min-width:160px">
@@ -887,8 +900,8 @@
           </div>
         </div>
 
-        <!-- フィルター（常に表示・1段）。会議で議論する順に近い並び：重要度→ステータス→種別→新規/保持→担当 -->
-        <div id="meeting-filter-panel" class="mf-panel">
+        <!-- 絞り込み（普段は閉じる）。会議で議論する順に近い並び：重要度→ステータス→種別→新規/保持→担当 -->
+        <div id="meeting-filter-panel" class="mf-panel" style="display:none">
           <div class="mf-row">
 
             <!-- 重要度 -->
@@ -958,9 +971,6 @@
               <input type="text" id="meeting-assigned-search" class="form-control mf-select" style="width:110px" placeholder="名前" autocomplete="off" oninput="filterMeeting()">
               <button class="filter-toggle-btn" id="meeting-unassigned-btn" onclick="toggleUnassignedMeeting()">未設定</button>
             </div>
-
-            <!-- リセット -->
-            <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="resetMeetingFilters()">↺ 条件をリセット</button>
           </div>
 
           <!-- 非表示（後方互換のため残す） -->
@@ -972,6 +982,9 @@
             <div id="meeting-type-cbs"></div>
           </div>
         </div>
+
+        <!-- かかっている絞り込み条件（条件があるときだけ表示。印刷にも出す） -->
+        <div id="meeting-active-filters" class="mf-active" style="display:none"></div>
 
         <div style="padding:12px 20px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:12px;color:var(--text-muted)" id="meeting-summary-bar">
           <span id="meeting-count">0件</span>
@@ -2413,6 +2426,55 @@ function escNl(str) {
 let meetingProspects = [];
 let meetingFiltered = []; // 画面に表示中（絞り込み・並び替え後）の案件。CSV/Excel出力に使う
 
+// 絞り込みパネルの開閉
+function toggleMeetingFilter() {
+  const panel = document.getElementById('meeting-filter-panel');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? '' : 'none';
+  document.getElementById('meeting-filter-toggle')?.classList.toggle('open', open);
+}
+
+// いまかかっている絞り込み条件の一覧（表示用の文言と、その条件を外す処理）
+function getMeetingActiveFilters() {
+  const list = [];
+  const selText = id => { const s = document.getElementById(id); return s?.options[s.selectedIndex]?.textContent || ''; };
+  const add = (label, clear) => list.push({ label, clear });
+
+  [...filterState.imp].sort().forEach(v => add('重要度：' + v, () => toggleFilterBtn('imp', v)));
+  if (document.getElementById('meeting-status-select').value)
+    add('ステータス：' + selText('meeting-status-select'), () => { document.getElementById('meeting-status-select').value = ''; filterMeeting(); });
+  if (document.getElementById('meeting-category-select').value)
+    add('種別：' + selText('meeting-category-select'), () => { document.getElementById('meeting-category-select').value = ''; filterMeeting(); });
+  [...filterState.type].forEach(v => add(v, () => toggleFilterBtn('type', v)));
+  if (document.getElementById('meeting-section-select').value)
+    add('担当課：' + selText('meeting-section-select'), () => { document.getElementById('meeting-section-select').value = ''; filterMeeting(); });
+  const name = document.getElementById('meeting-assigned-search').value.trim();
+  if (name) add('案件担当：' + name, () => { document.getElementById('meeting-assigned-search').value = ''; filterMeeting(); });
+  if (showUnassignedMeeting) add('案件担当：未設定', () => toggleUnassignedMeeting());
+  return list;
+}
+
+let meetingActiveFilters = [];
+function renderMeetingActiveFilters() {
+  meetingActiveFilters = getMeetingActiveFilters();
+  const box = document.getElementById('meeting-active-filters');
+  const count = document.getElementById('meeting-filter-count');
+  const n = meetingActiveFilters.length;
+  if (count) { count.textContent = n; count.style.display = n ? '' : 'none'; }
+  if (!box) return;
+  if (!n) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  box.innerHTML = '<span class="mf-active-label">絞り込み中：</span>' +
+    meetingActiveFilters.map((f, i) =>
+      `<span class="mf-chip">${esc(f.label)}<button class="mf-chip-x" title="この条件を外す" onclick="clearMeetingFilter(${i})">×</button></span>`
+    ).join('') +
+    '<button class="mf-clear-all" onclick="resetMeetingFilters()">↺ すべて解除</button>';
+}
+
+function clearMeetingFilter(i) {
+  meetingActiveFilters[i]?.clear();
+}
+
 function toggleOutputMenu() {
   const menu = document.getElementById('output-menu');
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
@@ -2574,6 +2636,7 @@ function lastMoveHtml(p) {
 }
 
 function filterMeeting() {
+  renderMeetingActiveFilters();
   const statusSel = document.getElementById('meeting-status-select')?.value || '';
   const categorySel = document.getElementById('meeting-category-select')?.value || '';
   const sectionKey = document.getElementById('meeting-section-select')?.value || '';
@@ -2681,8 +2744,91 @@ function exportCSV() {
   a.click();
 }
 
-function exportExcel() {
+// ===== Excel出力 =====
+// ExcelJS で本物の .xlsx を作る（開くときの「ファイル形式と拡張子が一致しません」警告が出ない）。
+// ライブラリは出力ボタンを押したときだけ読み込む。読み込めない場合（社内ネットワークで遮断など）は従来の .xls 形式で出力する。
+const EXCELJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+function loadExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = EXCELJS_URL;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('ExcelJS の読み込みに失敗しました'));
+    document.head.appendChild(s);
+  });
+}
+
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+async function exportExcel() {
   document.getElementById('output-menu').style.display = 'none';
+  try {
+    await loadExcelJS();
+  } catch (e) {
+    console.error(e);
+    exportExcelHtml();
+    return;
+  }
+  const { headers, rows } = buildExportRows();
+  const data = getFilteredMeetingData();
+  const amountCol = headers.indexOf('見込み額');
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('案件会議', { views: [{ state: 'frozen', ySplit: 1 }] });
+  const border = { style: 'thin', color: { argb: 'FFB8C8CE' } };
+  const borders = { top: border, left: border, bottom: border, right: border };
+
+  ws.addRow(headers);
+  rows.forEach((r, i) => {
+    const values = [...r];
+    // 見込み額は数値で入れる（Excelで並べ替え・合計ができるように）
+    const amt = Number(data[i]?.expected_amount);
+    if (amountCol >= 0) values[amountCol] = amt ? amt : '';
+    ws.addRow(values);
+  });
+
+  ws.eachRow((row, rowNum) => {
+    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      cell.border = borders;
+      cell.font = { name: 'Meiryo UI', size: 10, ...(rowNum === 1 ? { bold: true, color: { argb: 'FFFFFFFF' } } : {}) };
+      cell.alignment = { vertical: 'top', wrapText: rowNum !== 1 };
+      if (rowNum === 1) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3DBDD8' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else if (rowNum % 2 === 1) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F8FA' } };
+      }
+      if (rowNum > 1 && colNum === amountCol + 1) {
+        cell.numFmt = '"¥"#,##0';
+        cell.alignment = { vertical: 'top', horizontal: 'right' };
+      }
+    });
+  });
+
+  // 列幅：中身の長さに合わせる（全角は2文字分で数える。広がりすぎないよう上限あり）
+  const width = v => [...String(v ?? '')].reduce((n, ch) => n + (ch.charCodeAt(0) > 255 ? 2 : 1), 0);
+  headers.forEach((h, j) => {
+    const max = Math.max(width(h), ...rows.map(r => width(r[j])));
+    ws.getColumn(j + 1).width = Math.min(Math.max(max + 2, 8), 45);
+  });
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
+
+  const buf = await wb.xlsx.writeBuffer();
+  downloadBlob(
+    new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    `ナスカン案件会議_${new Date().toISOString().slice(0,10)}.xlsx`
+  );
+}
+
+// 予備：ExcelJS が使えないときの従来方式（HTML表を .xls として保存。開くときに警告が出る）
+function exportExcelHtml() {
   const { headers, rows } = buildExportRows();
   // 罫線・見出しの色を付けて、Excelで開いたときに表として見やすくする
   const style = `<style>
@@ -2699,11 +2845,10 @@ function exportExcel() {
     html += `<tr class="${i % 2 ? 'even' : ''}">` + r.map((v, j) => `<td${j === amountCol ? ' class="amount"' : ''}>${esc(v)}</td>`).join('') + '</tr>';
   });
   html += '</table></body></html>';
-  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `ナスカン案件会議_${new Date().toISOString().slice(0,10)}.xls`;
-  a.click();
+  downloadBlob(
+    new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' }),
+    `ナスカン案件会議_${new Date().toISOString().slice(0,10)}.xls`
+  );
 }
 
 function printMeeting() {

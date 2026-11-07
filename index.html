@@ -564,10 +564,10 @@
 
   /* 案件会議サマリーのフィルター（常に表示） */
   .mf-panel { padding: 10px 20px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-  .mf-row { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+  .mf-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
   .mf-item { display: flex; align-items: center; gap: 6px; }
   .mf-label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-  .mf-select { width: 140px; font-size: 13px; padding: 5px 8px; }
+  .mf-select { width: 128px; font-size: 12px; padding: 4px 6px; }
   .filter-toggle-btn { padding: 4px 10px; border: 1px solid var(--border-strong); border-radius: 4px; font-size: 12px; cursor: pointer; background: var(--surface); color: var(--text); white-space: nowrap; }
   .filter-toggle-btn:hover { border-color: var(--accent); }
   .filter-toggle-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
@@ -887,7 +887,7 @@
           </div>
         </div>
 
-        <!-- フィルター（常に表示）。会議で議論する順に近い並び：重要度→ステータス→種別→新規/保持→担当 -->
+        <!-- フィルター（常に表示・1段）。会議で議論する順に近い並び：重要度→ステータス→種別→新規/保持→担当 -->
         <div id="meeting-filter-panel" class="mf-panel">
           <div class="mf-row">
 
@@ -943,18 +943,8 @@
                 <button class="filter-toggle-btn" id="type-btn-保持" onclick="toggleFilterBtn('type','保持')">保持</button>
               </div>
             </div>
-          </div>
-          <div class="mf-row">
 
-            <!-- 担当部 -->
-            <div class="mf-item">
-              <span class="mf-label">担当部</span>
-              <select id="meeting-dept-select" onchange="onMeetingDeptChange()" class="form-control mf-select" style="width:110px">
-                <option value="">すべて</option>
-              </select>
-            </div>
-
-            <!-- 担当課 -->
+            <!-- 担当課（部と課を1つにまとめた選択） -->
             <div class="mf-item">
               <span class="mf-label">担当課</span>
               <select id="meeting-section-select" onchange="filterMeeting()" class="form-control mf-select">
@@ -965,8 +955,8 @@
             <!-- 案件担当 -->
             <div class="mf-item">
               <span class="mf-label">案件担当</span>
-              <input type="text" id="meeting-assigned-search" class="form-control mf-select" placeholder="名前で絞り込み..." autocomplete="off" oninput="filterMeeting()">
-              <button class="filter-toggle-btn" id="meeting-unassigned-btn" onclick="toggleUnassignedMeeting()">担当未設定</button>
+              <input type="text" id="meeting-assigned-search" class="form-control mf-select" style="width:110px" placeholder="名前" autocomplete="off" oninput="filterMeeting()">
+              <button class="filter-toggle-btn" id="meeting-unassigned-btn" onclick="toggleUnassignedMeeting()">未設定</button>
             </div>
 
             <!-- リセット -->
@@ -1389,7 +1379,6 @@ let activities = [];
 let users = [];
 let selectedCompanyId = null;
 let selectedProspectId = null;
-let meetingDeptSectionMap = {};
 let meetingAmountSort = null; // null | 'asc' | 'desc'
 let meetingLastSort = null; // null | 'asc'(古い順) | 'desc'(新しい順)
 let showUnassignedProspects = false;
@@ -2500,47 +2489,26 @@ async function loadMeeting() {
     ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-type-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
 
-  // 担当部・担当課を動的生成（部→課の対応関係も保持）
-  meetingDeptSectionMap = {};
-  meetingProspects.forEach(p => {
-    const d = p.users?.department;
-    const s = p.users?.section;
-    if (!d) return;
-    if (!meetingDeptSectionMap[d]) meetingDeptSectionMap[d] = new Set();
-    if (s) meetingDeptSectionMap[d].add(s);
-  });
-  const deptSelect = document.getElementById('meeting-dept-select');
-  if (deptSelect) {
-    const depts = Object.keys(meetingDeptSectionMap).sort();
-    const prevDept = deptSelect.value;
-    deptSelect.innerHTML = '<option value="">すべて</option>' + 
-      depts.map(d => `<option value="${d}">${d}</option>`).join('');
-    if (depts.includes(prevDept)) deptSelect.value = prevDept;
-  }
   updateMeetingSectionOptions();
-
   filterMeeting();
 }
 
+// 担当課の選択肢（案件担当の所属から生成）。部と課を1つのリストにまとめ、値は「部||課」
 function updateMeetingSectionOptions() {
-  const sectionSelect = document.getElementById('meeting-section-select');
-  if (!sectionSelect) return;
-  const deptSel = document.getElementById('meeting-dept-select')?.value || '';
-  const prevSection = sectionSelect.value;
-  let sections;
-  if (deptSel && meetingDeptSectionMap[deptSel]) {
-    sections = [...meetingDeptSectionMap[deptSel]].sort();
-  } else {
-    sections = [...new Set(Object.values(meetingDeptSectionMap).flatMap(s => [...s]))].sort();
-  }
-  sectionSelect.innerHTML = '<option value="">すべて</option>' + 
-    sections.map(s => `<option value="${s}">${s}</option>`).join('');
-  if (sections.includes(prevSection)) sectionSelect.value = prevSection;
-}
-
-function onMeetingDeptChange() {
-  updateMeetingSectionOptions();
-  filterMeeting();
+  const sel = document.getElementById('meeting-section-select');
+  if (!sel) return;
+  const prev = sel.value;
+  const keys = new Map();
+  meetingProspects.forEach(p => {
+    const d = p.users?.department || '';
+    const s = p.users?.section || '';
+    if (!d && !s) return;
+    keys.set(d + '||' + s, [d, s].filter(Boolean).join('　'));
+  });
+  const sorted = [...keys.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+  sel.innerHTML = '<option value="">すべて</option>' +
+    sorted.map(([k, label]) => `<option value="${esc(k)}">${esc(label)}</option>`).join('');
+  if (keys.has(prev)) sel.value = prev;
 }
 
 function toggleMeetingAmountSort() {
@@ -2608,8 +2576,8 @@ function lastMoveHtml(p) {
 function filterMeeting() {
   const statusSel = document.getElementById('meeting-status-select')?.value || '';
   const categorySel = document.getElementById('meeting-category-select')?.value || '';
-  const deptSel = document.getElementById('meeting-dept-select')?.value || '';
-  const sectionSel = document.getElementById('meeting-section-select')?.value || '';
+  const sectionKey = document.getElementById('meeting-section-select')?.value || '';
+  const [deptSel, sectionSel] = sectionKey ? sectionKey.split('||') : ['', ''];
   const assignedSearch = (document.getElementById('meeting-assigned-search')?.value || '').toLowerCase();
 
   let filtered = meetingProspects.filter(p => {
@@ -2619,8 +2587,8 @@ function filterMeeting() {
     const matchCategory = !categorySel || (categorySel === '__none__' ? pCats.length === 0 : pCats.includes(categorySel));
     const matchAssigned = !assignedSearch || (p.users?.name || '').toLowerCase().includes(assignedSearch);
     const matchType = filterState.type.size === 0 || filterState.type.has(p.prospect_type);
-    const matchDept = !deptSel || p.users?.department === deptSel;
-    const matchSection = !sectionSel || p.users?.section === sectionSel;
+    const matchDept = !sectionKey || (p.users?.department || '') === deptSel;
+    const matchSection = !sectionKey || (p.users?.section || '') === sectionSel;
     const matchUnassigned = !showUnassignedMeeting || !p.assigned_to;
     return matchStatus && matchImportance && matchCategory && matchAssigned && matchType && matchDept && matchSection && matchUnassigned;
   });
@@ -2811,8 +2779,6 @@ function resetMeetingFilters() {
   // ステータス・種別セレクト
   document.getElementById('meeting-status-select').value = '';
   document.getElementById('meeting-category-select').value = '';
-  document.getElementById('meeting-dept-select').value = '';
-  updateMeetingSectionOptions();
   document.getElementById('meeting-section-select').value = '';
   // 担当者検索
   document.getElementById('meeting-assigned-search').value = '';

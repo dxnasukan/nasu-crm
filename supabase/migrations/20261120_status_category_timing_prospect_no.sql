@@ -51,8 +51,17 @@ update public.prospects set status = 5 where status = 6;
 delete from public.prospect_categories where category in ('分析', '工事');
 
 -- 1-3. 受注見込み時期：来年度以降にまとめる
+--      timing_label には入れられる値の制限（prospects_timing_label_check）が既にあり、
+--      「来年度以降」が入らなかった（2026-11-23 に実行して判明。全体が取り消され、データは変わっていない）。
+--      制限をいったん外して書き換え、新しい選択肢で制限を付け直す
+alter table public.prospects drop constraint if exists prospects_timing_label_check;
+
 update public.prospects set timing_label = '来年度以降'
 where timing_label in ('来年度', '2年以内', '3年以内');
+
+alter table public.prospects
+  add constraint prospects_timing_label_check
+    check (timing_label is null or timing_label in ('今月中', '3カ月以内', '今年度中', '来年度以降', '未定'));
 
 -- 1-4. 案件番号：列を足し、登録順に番号を振ってから、以後は自動で振られるようにする
 alter table public.prospects add column if not exists prospect_no bigint;
@@ -100,3 +109,7 @@ comment on column public.prospects.prospect_no is '案件番号（連番）。�
 -- alter table public.prospects
 --   drop constraint if exists prospects_prospect_no_key,
 --   drop column if exists prospect_no;
+-- 受注見込み時期の制限を旧い選択肢に戻す場合（値を控えのとおり戻してから）：
+-- alter table public.prospects drop constraint if exists prospects_timing_label_check,
+--   add constraint prospects_timing_label_check
+--     check (timing_label is null or timing_label in ('今月中','3カ月以内','今年度中','来年度','2年以内','3年以内','未定'));

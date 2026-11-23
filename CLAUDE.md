@@ -57,7 +57,9 @@
 | `activities` | `company_id`, `prospect_id`, `activity_type`, `activity_date`, `summary`, `next_action`, `assigned_to`, `deleted_at`（**論理削除**）。活動保存時に案件の `updated_at` を更新 |
 
 - 一覧取得では `deleted_at IS NULL` を必ず付けている。新しいクエリでも同様にすること。
-- ステータス：1 情報収集中 / 2 アプローチ中 / 3 ヒアリング / 4 設計・積算中 / 5 見積提出 / 6 交渉 / 7 内示・受注確定 / 8 失注 / 9 対象外（`STATUS_LABELS`）。
+- ステータス（DB の値：名前）：1 情報収集中 / 2 アプローチ中 / 3 ヒアリング / 5 見積提出済み / 7 内示・受注確定 / 8 失注 / 9 対象外。画面の選択肢では 1〜7 に振り直して表示する（DB の値は変えない）。4 設計・積算中・6 交渉 は 2026-11 に廃止（過去の履歴表示用に `STATUS_LABELS` には残す）。
+- 案件番号：`prospects.prospect_no`（連番、DB が自動採番）。画面では `PROSPECT_NO_PREFIX`（例：`AK-0012`）を付けて表示する。
+- 廃止した選択肢の値が残っている案件を編集するときは、`setSelectValueKeepingLegacy()` で「（旧）」として表示し、保存しても消えないようにしている。
 
 ## 認証
 

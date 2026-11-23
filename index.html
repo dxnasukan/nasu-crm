@@ -420,20 +420,19 @@
     #meeting-table .badge-importance { width: 16px !important; height: 16px !important; font-size: 9px !important; }
     #meeting-table tr { page-break-inside: avoid; }
     #meeting-table thead { display: table-header-group; } /* 2ページ目以降にも見出しを出す */
-    /* 列幅（合計100%）：重要度・得意先・案件名・新規/保持・種別・本支店・担当課・案件担当・ステータス・最終活動・直近変更・受注見込み時期・見込み額 */
+    /* 列幅（合計100%）：重要度・得意先・案件名・新規/保持・種別・本支店・担当課・案件担当・ステータス・最終活動・受注見込み時期・見込み額 */
     #meeting-table th:nth-child(1)  { width: 4% !important; }
-    #meeting-table th:nth-child(2)  { width: 12% !important; }
-    #meeting-table th:nth-child(3)  { width: 17% !important; }
+    #meeting-table th:nth-child(2)  { width: 15% !important; }
+    #meeting-table th:nth-child(3)  { width: 21% !important; }
     #meeting-table th:nth-child(4)  { width: 4% !important; }
     #meeting-table th:nth-child(5)  { width: 7% !important; }
     #meeting-table th:nth-child(6)  { width: 6% !important; }
     #meeting-table th:nth-child(7)  { width: 7% !important; }
     #meeting-table th:nth-child(8)  { width: 6% !important; }
     #meeting-table th:nth-child(9)  { width: 8% !important; }
-    #meeting-table th:nth-child(10) { width: 6% !important; }
-    #meeting-table th:nth-child(11) { width: 9% !important; }
-    #meeting-table th:nth-child(12) { width: 6% !important; }
-    #meeting-table th:nth-child(13) { width: 8% !important; }
+    #meeting-table th:nth-child(10) { width: 7% !important; }
+    #meeting-table th:nth-child(11) { width: 7% !important; }
+    #meeting-table th:nth-child(12) { width: 8% !important; }
     .print-header { display: block !important; }
     #meeting-summary-bar { display: none !important; } /* 件数・合計は印刷用の見出しに出しているので重複させない */
     .mf-chip-x, .mf-clear-all { display: none !important; }
@@ -606,6 +605,7 @@
   .mf-chip-x:hover { background: var(--bg); color: var(--danger); }
   .mf-clear-all { margin-left: auto; border: none; background: none; cursor: pointer; color: var(--link); font-size: 12px; }
   .mf-clear-all:hover { text-decoration: underline; }
+  .prospect-no { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; white-space: nowrap; }
   .amount-cont { display: inline-block; padding: 0 5px; margin-left: 2px; border-radius: 3px; background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 600; white-space: nowrap; vertical-align: 1px; }
   .branch-tag { display: inline-block; padding: 0 6px; border-radius: 3px; background: var(--bg); color: var(--text-muted); font-size: 11px; white-space: nowrap; }
 
@@ -828,7 +828,7 @@
           <div class="toolbar">
             <div class="search-wrap">
               <span class="search-icon">🔍</span>
-              <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名で検索..." oninput="filterProspects()">
+              <input type="text" class="form-control search-input" id="prospect-search" placeholder="案件名・会社名・案件番号で検索..." oninput="filterProspects()">
             </div>
             <button class="btn btn-secondary" id="prospect-mine-btn" onclick="toggleMyProspects()" style="white-space:nowrap">自分の担当</button>
             <button class="btn btn-secondary" id="prospect-mysection-btn" onclick="toggleMySection()" style="white-space:nowrap">自分の課</button>
@@ -847,9 +847,7 @@
               <option value="1">情報収集中</option>
               <option value="2">アプローチ中</option>
               <option value="3">ヒアリング</option>
-              <option value="4">設計・積算中</option>
-              <option value="5">見積提出</option>
-              <option value="6">交渉</option>
+              <option value="5">見積提出済み</option>
               <option value="7">内示・受注確定</option>
               <option value="8">失注</option>
               <option value="9">対象外</option>
@@ -955,9 +953,7 @@
                 <option value="1">情報収集中</option>
                 <option value="2">アプローチ中</option>
                 <option value="3">ヒアリング</option>
-                <option value="4">設計・積算中</option>
-                <option value="5">見積提出</option>
-                <option value="6">交渉</option>
+                <option value="5">見積提出済み</option>
                 <option value="7">内示・受注確定</option>
               </select>
             </div>
@@ -968,12 +964,10 @@
               <select id="meeting-category-select" onchange="filterMeeting()" class="form-control mf-select">
                 <option value="">すべて</option>
                 <option value="__none__">未選択</option>
-                <option value="分析">分析</option>
                 <option value="水質">水質</option>
                 <option value="大気">大気</option>
                 <option value="調査">調査</option>
                 <option value="薬品">薬品</option>
-                <option value="工事">工事</option>
                 <option value="給排水設備工事">給排水設備工事</option>
                 <option value="熱源空調設備工事">熱源空調設備工事</option>
                 <option value="その他工事">その他工事</option>
@@ -1050,13 +1044,12 @@
                 <th style="width:72px">案件担当</th>
                 <th style="width:88px;text-align:center">ステータス</th>
                 <th id="meeting-last-th" style="width:84px;cursor:pointer;user-select:none" onclick="toggleMeetingLastSort()" title="クリックで並び替え（古い順→新しい順→解除）">最終活動 <span id="meeting-last-sort-icon" style="font-size:10px">↕</span></th>
-                <th style="width:120px">直近変更</th>
                 <th style="width:72px;text-align:center;white-space:normal;line-height:1.3">受注見込み<br>時期</th>
                 <th id="meeting-amount-th" style="width:90px;text-align:right;cursor:pointer;user-select:none" onclick="toggleMeetingAmountSort()">見込み額 <span id="meeting-amount-sort-icon" style="font-size:10px">↕</span></th>
               </tr>
             </thead>
             <tbody id="meeting-tbody">
-              <tr><td colspan="13" class="loading">読み込み中...</td></tr>
+              <tr><td colspan="12" class="loading">読み込み中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1174,12 +1167,10 @@
               <option value="1">1. 情報収集中</option>
               <option value="2">2. アプローチ中</option>
               <option value="3">3. ヒアリング</option>
-              <option value="4">4. 設計・積算中</option>
-              <option value="5">5. 見積提出</option>
-              <option value="6">6. 交渉</option>
-              <option value="7">7. 内示・受注確定</option>
-              <option value="8">8. 失注</option>
-              <option value="9">9. 対象外</option>
+              <option value="5">4. 見積提出済み</option>
+              <option value="7">5. 内示・受注確定</option>
+              <option value="8">6. 失注</option>
+              <option value="9">7. 対象外</option>
             </select>
           </div>
         </div>
@@ -1188,12 +1179,10 @@
             <label class="form-label">案件種別</label>
             <select class="form-control" id="prospect-category">
               <option value="">選択してください</option>
-              <option value="分析">分析</option>
               <option value="水質">水質</option>
               <option value="大気">大気</option>
               <option value="調査">調査</option>
               <option value="薬品">薬品</option>
-              <option value="工事">工事</option>
               <option value="給排水設備工事">給排水設備工事</option>
               <option value="熱源空調設備工事">熱源空調設備工事</option>
               <option value="その他工事">その他工事</option>
@@ -1203,7 +1192,7 @@
         </div>
         <div>
           <div class="form-group">
-            <label class="form-label">見込み金額（円）</label>
+            <label class="form-label">見込み金額（円） *</label>
             <div style="display:flex;gap:6px">
               <input type="number" class="form-control" id="prospect-amount" placeholder="0" style="flex:1;min-width:0">
               <select class="form-control" id="prospect-amount-type" style="width:86px;flex:none" title="継続して契約する業務は年額で入力し「継続」を選ぶ">
@@ -1221,9 +1210,7 @@
               <option value="今月中">今月中</option>
               <option value="3カ月以内">3カ月以内</option>
               <option value="今年度中">今年度中</option>
-              <option value="来年度">来年度</option>
-              <option value="2年以内">2年以内</option>
-              <option value="3年以内">3年以内</option>
+              <option value="来年度以降">来年度以降</option>
               <option value="未定">未定</option>
             </select>
           </div>
@@ -1429,8 +1416,9 @@
           </dd>
           <dt>見込み金額</dt>
           <dd>
-            わかる範囲で入力してください（わからなくても登録できます）。<br>
-            ビル管理や定期の分析など、<strong>継続して契約する業務は「年額」で入力し、「継続/年」を選んでください</strong>（例：月15万円なら 1,800,000）。
+            <strong>必ず入力してください</strong>。はっきりしない場合は、おおよその金額で構いません。<br>
+            薬品・ビル管理・分析など、<strong>継続して契約する業務は「年額」で入力し、「継続/年」を選んでください</strong>（例：月15万円なら 1,800,000）。<br>
+            新規事業所の場合は、<strong>年間の想定売上金額</strong>を入力してください。
           </dd>
           <dt>受注見込み時期</dt>
           <dd>当てはまるものの中で、一番近いものを選んでください。</dd>
@@ -1450,7 +1438,7 @@
       </div>
 
       <div class="guide-section">
-        <h3>ステータス「8. 失注」と「9. 対象外」の使い分け</h3>
+        <h3>ステータス「6. 失注」と「7. 対象外」の使い分け</h3>
         <dl>
           <dt><span class="badge status-8">失注</span></dt>
           <dd>提案・見積をしたが、受注できなかった案件（他社に決まった、価格で負けた など）。</dd>
@@ -1480,9 +1468,37 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ===== 定数 =====
 const STATUS_LABELS = {
   1: '情報収集中', 2: 'アプローチ中', 3: 'ヒアリング',
-  4: '設計・積算中', 5: '見積提出', 6: '交渉',
+  4: '設計・積算中', 5: '見積提出済み', 6: '交渉',
   7: '内示・受注確定', 8: '失注', 9: '対象外'
 };
+// ステータス 4（設計・積算中）・6（交渉）は廃止したが、過去の履歴の表示用に STATUS_LABELS には残す。
+// 選択肢の番号は 1〜7 に振り直して表示している（DB の値 1,2,3,5,7,8,9 は変えない。案件登録の選択肢を参照）
+// 案件番号の頭に付ける文字（DB には数字だけを持つ。変えるときはここだけ直す）
+const PROSPECT_NO_PREFIX = 'AK-';
+function formatProspectNo(p) {
+  return p?.prospect_no ? PROSPECT_NO_PREFIX + String(p.prospect_no).padStart(4, '0') : '';
+}
+// 検索語が案件番号に当たるか（「AK-0012」「ak-12」「12」「0012」のどれでも当たる）
+function matchProspectNo(p, q) {
+  if (!p?.prospect_no || !q) return false;
+  const digits = q.replace(new RegExp('^' + PROSPECT_NO_PREFIX.replace(/[-]/g, '\\-'), 'i'), '').trim();
+  return /^\d+$/.test(digits) && Number(digits) === Number(p.prospect_no);
+}
+// 選択肢にない古い値（廃止した選択肢）が入っている案件を編集するとき、値が消えないように「（旧）」として一時的に選択肢へ足す
+function setSelectValueKeepingLegacy(selectId, value, legacyLabel) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.querySelectorAll('option[data-legacy]').forEach(o => o.remove());
+  const v = value == null ? '' : String(value);
+  if (v && ![...sel.options].some(o => o.value === v)) {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = (legacyLabel || v) + '（旧）';
+    opt.dataset.legacy = '1';
+    sel.appendChild(opt);
+  }
+  sel.value = v;
+}
 // 保存される値(activity_type)はDB互換のため変更せず、表示ラベルだけ「打合せ」に変更
 const ACTIVITY_TYPE_LABELS = { '訪問': '打合せ', '作業・工事': '作業・工事', '電話': '電話', 'メール': 'メール', 'その他': 'その他' };
 // 「止まっている案件」とみなす日数（案件会議サマリーの最終活動の警告表示）。月2回の会議にするなら15に変更
@@ -1875,7 +1891,7 @@ function renderProspects() {
   setToggleBtn('prospect-mysection-btn', !!myKey && sectionKey === myKey);
 
   let filtered = prospects.filter(p => {
-    const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search);
+    const matchSearch = p.title.toLowerCase().includes(search) || (p.companies?.name || '').toLowerCase().includes(search) || matchProspectNo(p, search);
     const matchStatus = !status || p.status == status;
     const matchMine = !showMyProspects || p.assigned_to === currentUser?.id;
     const matchUnassigned = !showUnassignedProspects || !p.assigned_to;
@@ -1908,6 +1924,7 @@ function renderProspects() {
       </div>
       <div class="prospect-item-company"><span class="link-jump" onclick="event.stopPropagation();jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</span>　<span style="${p.users?.name ? 'color:var(--text-faint)' : 'color:var(--danger);font-weight:600'}">担当：${esc(p.users?.name || '未設定')}</span></div>
       <div class="prospect-item-meta">
+        ${p.prospect_no ? `<span class="prospect-no">${esc(formatProspectNo(p))}</span>` : ''}
         ${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : ''}
         ${p.branch ? `<span class="branch-tag">${esc(p.branch)}</span>` : ''}
         ${p.expected_amount ? `<span style="font-size:11px;color:var(--text-muted)" class="amount">${formatAmountHtml(p)}</span>` : ''}
@@ -1939,6 +1956,7 @@ async function selectProspect(id) {
   detail.innerHTML = `
     <button class="sp-back-btn" onclick="spBack('prospects')">← 一覧に戻る</button>
     <div class="detail-header">
+      ${p.prospect_no ? `<div class="prospect-no" style="font-size:12px">${esc(formatProspectNo(p))}</div>` : ''}
       <div class="detail-company-name" style="font-size:16px">${esc(p.title)}</div>
       <div class="detail-meta" style="margin-top:6px">
         <span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span>
@@ -1966,6 +1984,10 @@ async function selectProspect(id) {
         <div class="info-row">
           <div class="info-cell-label">新規/保持</div>
           <div class="info-cell-value">${esc(p.prospect_type || '—')}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell-label">案件種別</div>
+          <div class="info-cell-value">${(p.prospect_categories || []).length ? esc(p.prospect_categories.map(c => c.category).join('・')) : '<span style="color:var(--text-faint)">未選択</span>'}</div>
         </div>
         <div class="info-row">
           <div class="info-cell-label">重要度</div>
@@ -2070,14 +2092,14 @@ async function openProspectModal() {
   document.getElementById('prospect-edit-id').value = '';
   document.getElementById('prospect-modal-title').textContent = '案件登録';
   document.getElementById('prospect-title').value = '';
-  document.getElementById('prospect-status').value = '1';
-  document.getElementById('prospect-category').value = '';
+  setSelectValueKeepingLegacy('prospect-status', '1');
+  setSelectValueKeepingLegacy('prospect-category', '');
   document.getElementById('prospect-amount').value = '';
   document.getElementById('prospect-amount-type').value = '単発';
   document.getElementById('prospect-branch').value = '';
   document.getElementById('prospect-type').value = '';
   document.getElementById('prospect-importance').value = '';
-  document.getElementById('prospect-timing-label').value = '';
+  setSelectValueKeepingLegacy('prospect-timing-label', '');
   document.getElementById('prospect-notes').value = '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', null);
@@ -2110,15 +2132,15 @@ async function editProspect(id) {
   document.getElementById('prospect-edit-id').value = p.id;
   document.getElementById('prospect-modal-title').textContent = '案件編集';
   document.getElementById('prospect-title').value = p.title || '';
-  document.getElementById('prospect-status').value = p.status || 1;
+  setSelectValueKeepingLegacy('prospect-status', p.status || 1, STATUS_LABELS[p.status]);
   const cat = (p.prospect_categories || [])[0]?.category || '';
-  document.getElementById('prospect-category').value = cat;
+  setSelectValueKeepingLegacy('prospect-category', cat);
   document.getElementById('prospect-amount').value = p.expected_amount || '';
   document.getElementById('prospect-amount-type').value = p.amount_type || '単発';
   document.getElementById('prospect-branch').value = p.branch || '';
   document.getElementById('prospect-type').value = p.prospect_type || '';
   document.getElementById('prospect-importance').value = p.importance || '';
-  document.getElementById('prospect-timing-label').value = p.timing_label || '';
+  setSelectValueKeepingLegacy('prospect-timing-label', p.timing_label || '');
   document.getElementById('prospect-notes').value = p.notes || '';
   document.getElementById('prospect-modal-alert').innerHTML = '';
   loadCompanySelect('prospect-company', p.company_id);
@@ -2137,6 +2159,8 @@ async function saveProspect() {
     if (!companyId) { showAlert('prospect-modal-alert', '得意先を選択してください（候補から選択）', 'error'); return; }
     const branch = document.getElementById('prospect-branch').value;
     if (!branch) { showAlert('prospect-modal-alert', '本支店区分を選択してください', 'error'); return; }
+    const amountVal = document.getElementById('prospect-amount').value;
+    if (!amountVal || Number(amountVal) <= 0) { showAlert('prospect-modal-alert', '見込み金額を入力してください（はっきりしない場合は、おおよその金額）', 'error'); return; }
 
     const data = {
       title,
@@ -2681,7 +2705,7 @@ async function loadMeeting() {
   await loadUsers();
 
   // ステータスチェックボックス
-  const statusMap = {1:'情報収集中',2:'アプローチ中',3:'ヒアリング',4:'設計・積算中',5:'見積提出',6:'交渉',7:'内示・受注確定'};
+  const statusMap = {1:'情報収集中',2:'アプローチ中',3:'ヒアリング',5:'見積提出済み',7:'内示・受注確定'};
   const statusContainer = document.getElementById('meeting-status-cbs');
   if (statusContainer) {
     statusContainer.innerHTML = Object.entries(statusMap).map(([v, label]) =>
@@ -2696,7 +2720,7 @@ async function loadMeeting() {
   // 種別チェックボックス
   const categoryContainer = document.getElementById('meeting-category-cbs');
   if (categoryContainer) {
-    categoryContainer.innerHTML = ['分析','水質','大気','調査','薬品','工事','給排水設備工事','熱源空調設備工事','その他工事','ビル管理'].map(c =>
+    categoryContainer.innerHTML = ['水質','大気','調査','薬品','給排水設備工事','熱源空調設備工事','その他工事','ビル管理'].map(c =>
       `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-category-cb" value="${c}" onchange="filterMeeting()" checked> ${c}</label>`
     ).join('') + `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="meeting-category-cb" value="none" onchange="filterMeeting()" checked> 未設定</label>`;
   }
@@ -2834,20 +2858,15 @@ function filterMeeting() {
 
   const tbody = document.getElementById('meeting-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="empty-text">該当する案件がありません</div></td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map(p => {
-    const histories = (p.prospect_histories || []).sort((a,b) => b.changed_at?.localeCompare(a.changed_at));
-    const latestChange = histories.find(h => h.status_from !== null);
-    const latestChangeHtml = latestChange
-      ? `<span style="font-size:11px;white-space:nowrap">${esc(latestChange.changed_at?.slice(0,10))}<br><span class="badge status-${latestChange.status_from}" style="font-size:10px">${STATUS_LABELS[latestChange.status_from]}</span>→<span class="badge status-${latestChange.status_to}" style="font-size:10px">${STATUS_LABELS[latestChange.status_to]}</span></span>`
-      : '<span style="color:var(--text-faint);font-size:11px">—</span>';
     return `<tr style="font-size:12px">
       <td style="text-align:center">${p.importance ? `<span class="badge badge-importance importance-${p.importance}">${p.importance}</span>` : '—'}</td>
       <td><strong class="link-jump" onclick="jumpToCompany('${p.company_id}')">${esc(p.companies?.name || '—')}</strong></td>
-      <td><span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
+      <td>${p.prospect_no ? `<span class="prospect-no">${esc(formatProspectNo(p))}</span><br>` : ''}<span class="link-jump" onclick="jumpToProspect('${p.id}')">${esc(p.title)}</span></td>
       <td style="color:var(--text-muted);font-size:12px">${esc(p.prospect_type || '—')}</td>
       <td style="color:var(--text-muted)">${[...new Set((p.prospect_categories || []).map(c => c.category))].join('・') || '—'}</td>
       <td>${p.branch ? esc(p.branch) : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</td>
@@ -2855,7 +2874,6 @@ function filterMeeting() {
       <td>${p.users?.name ? `<span style="color:var(--text-muted)">${esc(p.users.name)}</span>` : '<span style="color:var(--danger);font-weight:600">未設定</span>'}</td>
       <td><span class="badge status-${p.status}">${STATUS_LABELS[p.status]}</span></td>
       <td>${lastMoveHtml(p)}</td>
-      <td>${latestChangeHtml}</td>
       <td style="color:var(--text-muted)">${formatTiming(p)}</td>
       <td style="text-align:right" class="amount">${formatAmountHtml(p).replace(' <span', '<br><span')}</td>
     </tr>`;
@@ -2867,9 +2885,10 @@ function getFilteredMeetingData() {
 }
 
 function buildExportRows() {
-  const headers = ['重要度','得意先','案件名','新規/保持','種別','本支店区分','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額','金額区分'];
+  const headers = ['案件番号','重要度','得意先','案件名','新規/保持','種別','本支店区分','担当課','案件担当','ステータス','最終活動','受注見込み時期','見込み額','金額区分'];
   const rows = getFilteredMeetingData().map(p => {
     return [
+      formatProspectNo(p),
       p.importance || '',
       p.companies?.name || '',
       p.title,
